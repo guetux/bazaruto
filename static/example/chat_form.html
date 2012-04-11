@@ -22,8 +22,8 @@
   		$('#chatform').submit(function (e) {
   			e.preventDefault();
   			$.post('/chat/messages/', {
-  				'username': $('input[name=username').val(),
-  				'message': $('input[name=message').val()
+  				'username': $('#username').val(),
+  				'message': $('#message').val()
   			});
   			
   		});
@@ -35,8 +35,8 @@
 <body>
 	<table id="messages" ></table>
 	<form id="chatform" method="post" action="/chat/messages/">
-		<input type="hidden" name="username" value="@username" />
-		<input name="message" />
+		<input id="username" type="hidden" name="username" value="@username" />
+		<input id="message" name="message" />
 		<input type="submit"/>
 	</form>
 </body>

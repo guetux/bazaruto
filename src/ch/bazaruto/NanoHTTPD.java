@@ -286,13 +286,10 @@ public class NanoHTTPD {
                 // in data section, too, read it:
                 if (method.equalsIgnoreCase("POST")) {
                     String contentType = "";
-                    String contentTypeHeader = header
-                            .getProperty("content-type");
-                    StringTokenizer st = new StringTokenizer(contentTypeHeader,
-                            "; ");
-                    if (st.hasMoreTokens()) {
+                    String contentTypeHeader = header.getProperty("content-type");
+                    StringTokenizer st = new StringTokenizer(contentTypeHeader, "; ");
+                    if (st.hasMoreTokens())
                         contentType = st.nextToken();
-                    }
 
                     if (contentType.equalsIgnoreCase("multipart/form-data")) {
                         // Handle multipart/form-data
@@ -322,6 +319,8 @@ public class NanoHTTPD {
                         postLine = postLine.trim();
                         decodeParms(postLine, parms);
                     }
+                    
+                    
                 }
                 
                 // Build request
