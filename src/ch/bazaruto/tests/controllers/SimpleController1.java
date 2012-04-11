@@ -1,14 +1,13 @@
 package ch.bazaruto.tests.controllers;
 
 import ch.bazaruto.Bazaruto.POST;
-import ch.bazaruto.Controller;
 import ch.bazaruto.Request;
 import ch.bazaruto.Response;
 import ch.bazaruto.Bazaruto.GET;
 import ch.bazaruto.Bazaruto.Route;
 
 @Route("/sc1")
-public class SimpleController1 extends Controller {
+public class SimpleController1 {
 	@GET("/")
 	public Response index(Request req) {
 		return new Response("SC1:index");

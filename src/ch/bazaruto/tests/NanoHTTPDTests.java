@@ -39,12 +39,13 @@ public class NanoHTTPDTests {
 		class TimesTwoHTTPD extends NanoHTTPD {
 			@Override
 			public Response serve(Request req) {
-				return new Response(HTTP_OK, MIME_HTML, ""+(Integer)req.parms.get("i") * 2);
+				return new Response(""+(Integer)req.parms.get("i") * 2, HTTP_OK, MIME_HTML);
 			}
 		}
 		
         try {
-        	httpd = new TimesTwoHTTPD();	
+        	httpd = new TimesTwoHTTPD();
+        	httpd.startServer();
             HttpGet httpget = new HttpGet("http://localhost:9000/?i=21");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);
@@ -63,12 +64,13 @@ public class NanoHTTPDTests {
 		class TimesTwoHTTPD extends NanoHTTPD {
 			@Override
 			public Response serve(Request req) {
-				return new Response(HTTP_OK, MIME_HTML, ""+(Integer)req.parms.get("i") * 2);
+				return new Response(""+(Integer)req.parms.get("i") * 2, HTTP_OK, MIME_HTML);
 			}
 		}
 		
         try {
-        	httpd = new TimesTwoHTTPD();	
+        	httpd = new TimesTwoHTTPD();
+        	httpd.startServer();
             HttpPost httppost = new HttpPost("http://localhost:9000/");
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
 			nameValuePairs.add(new BasicNameValuePair("i","21"));
@@ -90,12 +92,13 @@ public class NanoHTTPDTests {
 		class TimesTwoHTTPD extends NanoHTTPD {
 			@Override
 			public Response serve(Request req) {
-				return new Response(HTTP_OK, MIME_HTML, ""+(Double)req.parms.get("i") * 5);
+				return new Response(""+(Double)req.parms.get("i") * 5, HTTP_OK, MIME_HTML);
 			}
 		}
 		
         try {
-        	httpd = new TimesTwoHTTPD();	
+        	httpd = new TimesTwoHTTPD();
+        	httpd.startServer();
             HttpGet httpget = new HttpGet("http://localhost:9000/?i=8.4");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);
@@ -114,12 +117,13 @@ public class NanoHTTPDTests {
 		class TimesTwoHTTPD extends NanoHTTPD {
 			@Override
 			public Response serve(Request req) {
-				return new Response(HTTP_OK, MIME_HTML, ""+(Double)req.parms.get("i") * 5);
+				return new Response(""+(Double)req.parms.get("i") * 5, HTTP_OK, MIME_HTML);
 			}
 		}
 		
         try {
-        	httpd = new TimesTwoHTTPD();	
+        	httpd = new TimesTwoHTTPD();
+        	httpd.startServer();
             HttpPost httppost = new HttpPost("http://localhost:9000/");
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
 			nameValuePairs.add(new BasicNameValuePair("i","8.4"));
@@ -142,12 +146,13 @@ public class NanoHTTPDTests {
 		class TestHTTPD extends NanoHTTPD {
 			@Override
 			public Response serve(Request req) {
-				return new Response(HTTP_OK, MIME_HTML, "TestMSG");
+				return new Response("TestMSG", HTTP_OK, MIME_HTML);
 			}
 		}
 		
         try {
-        	httpd = new TestHTTPD();	
+        	httpd = new TestHTTPD();
+        	httpd.startServer();
             HttpGet httpget = new HttpGet("http://localhost:9000/");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);

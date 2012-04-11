@@ -9,11 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 // This is not a typedef!
-class ControllerMap extends HashMap<String, Class<? extends Controller>> {
+class ControllerMap extends HashMap<String, Class> {
 	private static final long serialVersionUID = 1L;
 }
 
 /* The main class to create Bazaruto apps */
+@SuppressWarnings("rawtypes") 
 public class Bazaruto extends NanoHTTPD {
 
 	/* Annotation for Controller routes */
@@ -33,7 +34,8 @@ public class Bazaruto extends NanoHTTPD {
 	
 	private ControllerMap controllers = new ControllerMap();
 	
-	public void addController(Class<? extends Controller> controller) {
+	public void addController(Class controller) {
+		@SuppressWarnings("unchecked")
 		Annotation annotation = controller.getAnnotation(Route.class);
     	if(annotation instanceof Route){
     		Route route = (Route)annotation;
@@ -42,7 +44,7 @@ public class Bazaruto extends NanoHTTPD {
 	}
 	
 	public Response dispatch(Request req) {
-		for (Map.Entry<String, Class<? extends Controller>> entry: controllers.entrySet()) {
+		for (Map.Entry<String, Class> entry: controllers.entrySet()) {
 			if (req.uri.startsWith(entry.getKey())) {
 				String path = req.uri.replaceFirst(entry.getKey(), "");
 				return dispatchToMethod(req, entry.getValue(), path);
@@ -53,7 +55,7 @@ public class Bazaruto extends NanoHTTPD {
 				NanoHTTPD.HTTP_NOTFOUND);
 	}
 	
-	private Response dispatchToMethod(Request req, Class<? extends Controller> controller, String path) {
+	private Response dispatchToMethod(Request req, Class controller, String path) {
 		Method methods[] = controller.getDeclaredMethods();
 		
 		
@@ -83,9 +85,9 @@ public class Bazaruto extends NanoHTTPD {
 				NanoHTTPD.HTTP_NOTFOUND);
 	}
 	
-	private Response executeRequest(Request req, Class<? extends Controller> controller, Method method) {
+	private Response executeRequest(Request req, Class controller, Method method) {
 		try {
-			Controller instance = controller.newInstance();
+			Object instance = controller.newInstance();
 			Response res = (Response)method.invoke(instance, req);
 			return res;
 			

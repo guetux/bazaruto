@@ -149,8 +149,15 @@ public class NanoHTTPD {
 	// Socket & server code
 	// ==================================================
 
-	private void startServer() throws IOException {
+	public void startServer() throws IOException {
 
+		try {
+			myServerSocket = new ServerSocket(myTcpPort);
+		} catch (IOException ioe) {
+			System.err.println("Cannot bind to port " + myTcpPort + "!");
+			//throw ioe;
+		}
+		
 		myThread = new Thread(new Runnable() {
 			public void run() {
 				try {
@@ -165,20 +172,6 @@ public class NanoHTTPD {
 	}
 	
 	/**
-	 * Starts a HTTP server on the default port and in the current directory
-	 * 
-	 */
-	public NanoHTTPD() {
-		myTcpPort = 9000;
-		this.myRootDir = new File(".");
-		try {
-			myServerSocket = new ServerSocket(myTcpPort);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-	}
-
-	/**
 	 * Stops the server.
 	 */
 	public void stop() {
@@ -186,8 +179,7 @@ public class NanoHTTPD {
 			myServerSocket.close();
 			myThread.join();
 		} catch (IOException ioe) {
-		} catch (InterruptedException e) {
-		}
+		} catch (InterruptedException e) {}
 	}
 
 	/**
@@ -748,10 +740,10 @@ public class NanoHTTPD {
 		return newUri;
 	}
 
-	private int myTcpPort;
+	private int myTcpPort = 9000;
 	private ServerSocket myServerSocket;
 	private Thread myThread;
-	private File myRootDir;
+	private File myRootDir = new File(".");
 
 	// ==================================================
 	// File server code
