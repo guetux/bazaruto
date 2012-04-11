@@ -37,7 +37,7 @@ Starting the server is as easy as:
 
 	Bazaruto myapp = new Bazaruto();
 	myapp.addController(BooksController.class);
-	myapp.runserver();
+	myapp.startServer();
 	
 
 	
