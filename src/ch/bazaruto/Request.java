@@ -36,13 +36,31 @@ public class Request {
     public Request() {}
     
     /*
-     * 
+     * Extended Constructors
      */
-    public Request(String uri, String method, Properties header, Properties parms, Properties files) {
-        this.uri = uri;
+    public Request(String method, String uri, Properties parms, Properties header, Properties files) {
         this.method = method;
-        this.header = header;
+        this.uri = uri;
         this.parms = parms;
+        this.header = header;
         this.files = files;
+    }
+    
+    public Request(String method, String uri, Properties parms, Properties header) {
+        this.method = method;
+        this.uri = uri;
+        this.parms = parms;
+        this.header = header;
+    }
+    
+    public Request(String method, String uri, Properties parms) {
+        this.method = method;
+        this.uri = uri;
+        this.parms = parms;
+    }
+    
+    public Request(String method, String uri) {
+        this.method = method;
+        this.uri = uri;
     }
 }

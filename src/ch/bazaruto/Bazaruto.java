@@ -27,10 +27,20 @@ public class Bazaruto extends NanoHTTPD {
         String value();
     }
     
-    /* Annotation for GET Methods */
+    /* Annotation for POST Methods */
     public @Retention(RetentionPolicy.RUNTIME) @interface POST {
         String value();
-    }    
+    }
+    
+    /* Annotation for PUT Methods */
+    public @Retention(RetentionPolicy.RUNTIME) @interface PUT {
+        String value();
+    }
+    
+    /* Annotation for DELETE Methods */
+    public @Retention(RetentionPolicy.RUNTIME) @interface DELETE {
+        String value();
+    }
     
     private ControllerMap controllers = new ControllerMap();
     
@@ -73,6 +83,26 @@ public class Bazaruto extends NanoHTTPD {
             Annotation post_annotation = method.getAnnotation(POST.class);
             if(post_annotation instanceof POST && req.method.equalsIgnoreCase("POST")){
                 POST post = (POST)post_annotation;
+                String request_path = post.value();
+                if (request_path.startsWith(path)) {
+                    return executeRequest(req, controller, method);
+                }
+            }
+            
+            // Dispatch PUT
+            Annotation put_annotation = method.getAnnotation(PUT.class);
+            if(put_annotation instanceof PUT && req.method.equalsIgnoreCase("PUT")){
+                PUT post = (PUT)put_annotation;
+                String request_path = post.value();
+                if (request_path.startsWith(path)) {
+                    return executeRequest(req, controller, method);
+                }
+            }
+            
+            // Dispatch DELETE
+            Annotation delete_annotation = method.getAnnotation(DELETE.class);
+            if(delete_annotation instanceof DELETE && req.method.equalsIgnoreCase("DELETE")){
+                DELETE post = (DELETE)delete_annotation;
                 String request_path = post.value();
                 if (request_path.startsWith(path)) {
                     return executeRequest(req, controller, method);

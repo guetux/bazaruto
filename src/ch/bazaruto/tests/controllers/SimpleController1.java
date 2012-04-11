@@ -1,6 +1,8 @@
 package ch.bazaruto.tests.controllers;
 
+import ch.bazaruto.Bazaruto.DELETE;
 import ch.bazaruto.Bazaruto.POST;
+import ch.bazaruto.Bazaruto.PUT;
 import ch.bazaruto.Request;
 import ch.bazaruto.Response;
 import ch.bazaruto.Bazaruto.GET;
@@ -24,4 +26,15 @@ public class SimpleController1 {
         int number = (Integer)req.parms.get("number");
         return new Response("SC1:timestwo:"+number*2);
     }
+    
+    @PUT("/put")
+    public Response put(Request req) {
+        return new Response("SC1:put");
+    }
+    
+    @DELETE("/delete")
+    public Response delete(Request req) {
+        return new Response("SC1:delete");
+    }
+
 }

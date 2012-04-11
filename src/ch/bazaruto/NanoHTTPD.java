@@ -326,7 +326,7 @@ public class NanoHTTPD {
                 }
                 
                 // Build request
-                Request req = new Request(uri, method, header, parms, files);
+                Request req = new Request(method, uri, parms, header, files);
                 
 
                 if (method.equalsIgnoreCase("PUT"))
