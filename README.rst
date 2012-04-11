@@ -19,10 +19,9 @@ A Controller is written like this
 			return new Response("List books...");
 		}
 		
-		@GET("/details")
-		public Response detail(Request req) {
-			int id = (Integer)req.parms.get("id");
-			return new Response("Detail of book id:"+id);
+		@GET("/details/(\\d+)/")
+		public Response detail(Request req, int id) {
+			return new Response("Detail of book id: "+id);
 		}
 		
 		@POST("/update")
