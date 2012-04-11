@@ -5,7 +5,7 @@ import java.util.Properties;
 public class Request {
 
     /*
-     * The request uri representing 
+     * The request uri 
      */
     public String uri;
     
@@ -13,6 +13,11 @@ public class Request {
      * The HTTP method, one of ["GET", "POST", "PUT", "DELETE"]
      */
     public String method;
+    
+    /* 
+     * The part of the uri that matched the method
+     */
+    public String path;
     
     /*
      * Request headers

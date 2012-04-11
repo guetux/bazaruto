@@ -12,19 +12,27 @@ import ch.bazaruto.Bazaruto.Route;
 public class SimpleController1 {
     @GET("/")
     public Response index(Request req) {
-        return new Response("SC1:index");
+        return new Response("SC1:get");
     }
     
-    @GET("/details")
-    public Response detail(Request req) {
-        int id = (Integer)req.parms.get("id");
-        return new Response("SC1:detail:"+id);
+    @GET("/intarg/(\\d)/")
+    public Response intarg(Request req, int i) {
+        return new Response("SC1:intarg:" + i);
     }
     
-    @POST("/timestwo")
-    public Response timestwo(Request req) {
-        int number = (Integer)req.parms.get("number");
-        return new Response("SC1:timestwo:"+number*2);
+    @GET("/floatarg/(\\d\\.\\d)/")
+    public Response floatarg(Request req, double f) {
+        return new Response("SC1:floatarg:"+f);
+    }
+    
+    @GET("/stringarg/(\\w+)")
+    public Response stringarg(Request req, String str) {
+        return new Response("SC1:stringarg:"+ str);
+    }
+    
+    @POST("/postarg")
+    public Response postarg(Request req) {
+        return new Response("SC1:postarg:"+req.parms.get("number"));
     }
     
     @PUT("/put")

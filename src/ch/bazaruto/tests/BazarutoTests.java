@@ -22,41 +22,53 @@ public class BazarutoTests {
     }
 
     @Test
-    public void testIndex() {
+    public void testSimpleGet() {
         Request req = new Request("GET", "/sc1/");
         Response res = bazaruto.dispatch(req);
-        assertEquals("SC1:index", res.getData());
+        assertEquals("SC1:get", res.toString());
     }
 
     @Test
-    public void testDetail() {
-        Properties parms = new Properties();
-        parms.put("id", 1);
-        Request req = new Request("GET", "/sc1/details", parms);
+    public void testIntArg() {
+        Request req = new Request("GET", "/sc1/intarg/1/");
         Response res = bazaruto.dispatch(req);
-        assertEquals("SC1:detail:1", res.getData());
+        assertEquals("SC1:intarg:1", res.toString());
     }
     
     @Test
-    public void testTimesTwo() {
-        Properties parms = new Properties();
-        parms.put("number", 21);
-        Request req = new Request("POST", "/sc1/timestwo", parms);
+    public void testFloatArg() {
+        Request req = new Request("GET", "/sc1/floatarg/2.0/");
         Response res = bazaruto.dispatch(req);
-        assertEquals("SC1:timestwo:42", res.getData());
+        assertEquals("SC1:floatarg:2.0", res.toString());
+    }
+    
+    @Test
+    public void testStringArg() {
+        Request req = new Request("GET", "/sc1/stringarg/Hallo");
+        Response res = bazaruto.dispatch(req);
+        assertEquals("SC1:stringarg:Hallo", res.toString());
+    }
+    
+    @Test
+    public void testPostArg() {
+        Properties parms = new Properties();
+        parms.put("number", 42);
+        Request req = new Request("POST", "/sc1/postarg", parms);
+        Response res = bazaruto.dispatch(req);
+        assertEquals("SC1:postarg:42", res.toString());
     }
     
     @Test
     public void testPut() {
         Request req = new Request("PUT", "/sc1/put");
         Response res = bazaruto.dispatch(req);
-        assertEquals("SC1:put", res.getData());
+        assertEquals("SC1:put", res.toString());
     }
     
     @Test
     public void testDelete() {
         Request req = new Request("DELETE", "/sc1/delete");
         Response res = bazaruto.dispatch(req);
-        assertEquals("SC1:delete", res.getData());
+        assertEquals("SC1:delete", res.toString());
     }
 }

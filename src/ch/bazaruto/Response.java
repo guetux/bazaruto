@@ -72,7 +72,7 @@ public class Response {
         return new ByteArrayInputStream(txt.getBytes());
     }
     
-    public String getData() {
+    public String toString() {
         try {
             return new java.util.Scanner(this.data).useDelimiter("\\A").next();
         } catch (java.util.NoSuchElementException e) {
