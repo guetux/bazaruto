@@ -1,22 +1,18 @@
 package ch.bazaruto;
 
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-// This is not a typedef!
-@SuppressWarnings("rawtypes")
-class ControllerMap extends HashMap<Pattern, Class> {
-    private static final long serialVersionUID = 1L;
-}
 
 /* The main class to create Bazaruto apps */
 @SuppressWarnings("rawtypes") 
@@ -47,24 +43,49 @@ public class Bazaruto extends NanoHTTPD {
         String value();
     }
     
-    private ControllerMap controllers = new ControllerMap();
+    private HashMap<Pattern, Class> controllers = new HashMap<Pattern, Class>();
+    private HashMap<Pattern, File> staticPaths = new HashMap<Pattern, File>();
     
     public void addController(Class controller) {
         @SuppressWarnings("unchecked")
         Annotation annotation = controller.getAnnotation(Route.class);
-        if(annotation instanceof Route){
+        if (annotation instanceof Route){
             Pattern url_pattern = Pattern.compile(((Route)annotation).value());
             controllers.put(url_pattern, controller);
+        } else {
+            throw new RuntimeException(controller.getName() + 
+                    " does not define a route! Use @Route to do so"); 
         }
     }
     
+    public void removeController(Class controller){
+        for (Entry<Pattern, Class> e: controllers.entrySet()) {
+            if (e.getValue() == controller)
+                controllers.remove(e.getKey());
+        }
+    }
+    
+    public void addStaticPath(String path, File folder) {
+        Pattern url_pattern = Pattern.compile(path);
+        staticPaths.put(url_pattern, folder);
+    }
+    
     public Response dispatch(Request req) {
-        for (Map.Entry<Pattern, Class> entry: controllers.entrySet()) {
+        for (Entry<Pattern, Class> entry: controllers.entrySet()) {
             Pattern url_pattern = entry.getKey();
             Class controller = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll(url_pattern.pattern(), "");
                 return dispatchToMethod(req, controller);
+            }
+        }
+        
+        for (Entry<Pattern, File> entry: staticPaths.entrySet()) {
+            Pattern url_pattern = entry.getKey();
+            File path = entry.getValue();
+            if (url_pattern.matcher(req.uri).find()) {
+                req.uri = req.uri.replaceAll(url_pattern.pattern(), "");
+                return serveFile(req, path, false);
             }
         }
         
@@ -143,8 +164,10 @@ public class Bazaruto extends NanoHTTPD {
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (InvocationTargetException e) {
             e.printStackTrace();
-            return new Response("Error: Could not invoke method: Target exception\n" +
-                    e.getMessage(),
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            return new Response(sw.toString().replaceAll("\n","<br>"),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (SecurityException e) {
             e.printStackTrace();

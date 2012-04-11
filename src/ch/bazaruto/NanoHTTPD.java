@@ -121,7 +121,7 @@ public class NanoHTTPD {
                     + req.files.getProperty(value) + "'");
         }
 
-        return serveFile(req.uri, req.header, myRootDir, true);
+        return serveFile(req, myRootDir, true);
     }
 
     /**
@@ -149,13 +149,12 @@ public class NanoHTTPD {
     // Socket & server code
     // ==================================================
 
-    public void startServer() throws IOException {
+    public void startServer() {
 
         try {
             myServerSocket = new ServerSocket(myTcpPort);
         } catch (IOException ioe) {
             System.err.println("Cannot bind to port " + myTcpPort + "!");
-            //throw ioe;
         }
         
         myThread = new Thread(new Runnable() {
@@ -753,10 +752,12 @@ public class NanoHTTPD {
      * Serves file from homeDir and its' subdirectories (only). Uses only URI,
      * ignores all headers and HTTP parameters.
      */
-    public Response serveFile(String uri, Properties header, File homeDir,
-            boolean allowDirectoryListing) {
+    public Response serveFile(Request req, File homeDir, boolean allowDirectoryListing) {
+        
+        String uri = req.uri;
+        Properties header = req.header;
         Response res = null;
-
+        
         // Make sure we won't die of an exception later
         if (!homeDir.isDirectory())
             res = new Response(

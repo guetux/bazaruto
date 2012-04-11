@@ -86,4 +86,13 @@ public class Response {
     public void addHeader(String name, String value) {
         header.put(name, value);
     }
+    
+    public static Response redirect(String url) {
+        Response redirect = new Response( 
+                "<html><body>Redirected: " +
+                "<a href=\"" + url + "\">" + url + "</a>" +
+                "</body></html>", NanoHTTPD.HTTP_REDIRECT);
+        redirect.addHeader("Location", url);
+        return redirect;
+    }
 }
