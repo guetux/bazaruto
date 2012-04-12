@@ -10,22 +10,29 @@
   	$(function () {
   		setInterval(function () {
   			$.get('/chat/messages/', function (data) {
+  				var messages = $('#messages');
   				var n = "";
   				$.each(data, function(i, msg) {
-  					n += "<tr><th>"+msg.username+"</th><td>"+msg.message+"</td></tr>";
+  					n += msg.username + ": " +
+  						 msg.message + "\n";
   				});
-  				$("#messages").html(n);
+  				messages.text(n);
+  				messages.scrollTop(
+  					messages[0].scrollHeight - messages.height()
+  				);
   				
   			});
-  		}, 5000);
+  		}, 1000);
   		
   		$('#chatform').submit(function (e) {
   			e.preventDefault();
+  			if ($('#message').val() == '') 
+  			    return; 
   			$.post('/chat/messages/', {
   				'username': $('#username').val(),
   				'message': $('#message').val()
   			});
-  			
+  			$('#message').val('');
   		});
   	});
   
@@ -33,11 +40,11 @@
 </head>
 
 <body>
-	<table id="messages" ></table>
+	<textarea cols="80" rows="30" id="messages" ></textarea>
 	<form id="chatform" method="post" action="/chat/messages/">
 		<input id="username" type="hidden" name="username" value="@username" />
-		<input id="message" name="message" />
-		<input type="submit"/>
+		<input id="message" size="95" name="message" />
+		<input type="submit" value="Send"/>
 	</form>
 </body>
 </html>
