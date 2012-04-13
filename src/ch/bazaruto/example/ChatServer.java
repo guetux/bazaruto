@@ -11,9 +11,12 @@ import ch.bazaruto.Bazaruto.Route;
 import ch.bazaruto.NanoHTTPD;
 import ch.bazaruto.Request;
 import ch.bazaruto.Response;
+import ch.bazaruto.templates.Template;
 
 @Route("/chat")
 public class ChatServer {
+    
+    public static 
     
     class Message {
         public String username;
@@ -29,23 +32,26 @@ public class ChatServer {
     
     @GET("/user/")
     public Response username(Request req) {
-        Template t = new Template(new File("static/example/user_form.html"));
-        
+        Template t = new Template("example/user_form.html");
         return new Response(t.render());
     }
     
     @POST("/user/")
     public Response username_redirect(Request req) {
-        String username = req.parms.getProperty("username");
-        return Response.redirect("/chat/user/"+username+"/");
+        try {
+            String username = req.parms.getProperty("username");
+            return Response.redirect("/chat/user/"+username+"/");
+        } catch (Exception e) {
+            return new Response("Parameter fehler");
+        }
+        
     }
     
     @GET("/user/(\\w+)/")
     public Response chat_form(Request req, String username) {
         Properties context = new Properties();
         context.put("username", username);
-        Template t = new Template(new File("static/example/chat_form.html"), context);
-        
+        Template t = new Template("example/chat_form.html", context);
         return new Response(t.render());
     }
     

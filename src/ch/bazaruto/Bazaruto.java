@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -43,8 +43,8 @@ public class Bazaruto extends NanoHTTPD {
         String value();
     }
     
-    private HashMap<Pattern, Class> controllers = new HashMap<Pattern, Class>();
-    private HashMap<Pattern, File> staticPaths = new HashMap<Pattern, File>();
+    private Hashtable<Pattern, Class> controllers = new Hashtable<Pattern, Class>();
+    private Hashtable<Pattern, File> staticPaths = new Hashtable<Pattern, File>();
     
     public void addController(Class controller) {
         @SuppressWarnings("unchecked")
@@ -134,7 +134,7 @@ public class Bazaruto extends NanoHTTPD {
             }
         }
         
-        return new Response("Page not found: url not registered",
+        return new Response("Page not found: url " + req.uri + " not registered",
                 NanoHTTPD.HTTP_NOTFOUND);
     }
     
@@ -147,30 +147,25 @@ public class Bazaruto extends NanoHTTPD {
             
         // TODO: Better error handling here would be helpfull!
         } catch (InstantiationException e) {
-            e.printStackTrace();
             return new Response("Error: Could not instantiate controller " + 
                     controller.getName() + ". ?" +
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
             return new Response("Error: Could not instantiate controller "
                     + controller.getName() + ". " + e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
             return new Response("Error: Could not invoke method: Wrong number or arguments\n" +
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             return new Response(sw.toString().replaceAll("\n","<br>"),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (SecurityException e) {
-            e.printStackTrace();
             return new Response("Error: Could not instantiate controller: Security Exception\n" + 
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
