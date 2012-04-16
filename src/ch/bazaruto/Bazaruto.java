@@ -1,6 +1,5 @@
 package ch.bazaruto;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
@@ -13,6 +12,8 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import ch.bazaruto.storage.Storage;
 
 /* The main class to create Bazaruto apps */
 @SuppressWarnings("rawtypes") 
@@ -44,7 +45,7 @@ public class Bazaruto extends NanoHTTPD {
     }
     
     private Hashtable<Pattern, Class> controllers = new Hashtable<Pattern, Class>();
-    private Hashtable<Pattern, File> staticPaths = new Hashtable<Pattern, File>();
+    private Hashtable<Pattern, Storage> staticPaths = new Hashtable<Pattern, Storage>();
     
     public void addController(Class controller) {
         @SuppressWarnings("unchecked")
@@ -65,31 +66,27 @@ public class Bazaruto extends NanoHTTPD {
         }
     }
     
-    public void addStaticPath(String path, File folder) {
+    public void addStaticPath(String path, Storage storage) {
         Pattern url_pattern = Pattern.compile(path);
-        staticPaths.put(url_pattern, folder);
+        staticPaths.put(url_pattern, storage);
     }
     
     public Response dispatch(Request req) {
-    	Log.info("Req: " + req.uri);
-    	
         for (Entry<Pattern, Class> entry: controllers.entrySet()) {
             Pattern url_pattern = entry.getKey();
             Class controller = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll(url_pattern.pattern(), "");
-                Log.info("Dispatched to:" + controller.getName());
                 return dispatchToMethod(req, controller);
             }
         }
         
-        for (Entry<Pattern, File> entry: staticPaths.entrySet()) {
+        for (Entry<Pattern, Storage> entry: staticPaths.entrySet()) {
             Pattern url_pattern = entry.getKey();
-            File path = entry.getValue();
+            Storage storage = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.uri = req.uri.replaceAll(url_pattern.pattern(), "");
-                Log.info("Dispatched to:" + path.getAbsolutePath());
-                return serveFile(req, path, false);
+                return serveFile(req, storage, false);
             }
         }
         

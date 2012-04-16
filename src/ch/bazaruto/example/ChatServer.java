@@ -1,6 +1,5 @@
 package ch.bazaruto.example;
 
-import java.io.File;
 import java.util.LinkedList;
 import java.util.Properties;
 
@@ -11,12 +10,14 @@ import ch.bazaruto.Bazaruto.Route;
 import ch.bazaruto.NanoHTTPD;
 import ch.bazaruto.Request;
 import ch.bazaruto.Response;
+import ch.bazaruto.storage.FileStorage;
+import ch.bazaruto.storage.Storage;
 import ch.bazaruto.templates.Template;
 
-@Route("/chat")
+@Route("^/chat")
 public class ChatServer {
     
-    public static String STATIC_PATH = "static/example/";
+    public static Storage defaultStorage = new FileStorage("static/");
     
     class Message {
         public String username;
@@ -25,7 +26,7 @@ public class ChatServer {
     
     public static LinkedList<Message> messages = new LinkedList<Message>();
 
-    @GET("/")
+    @GET("/$")
     public Response redirect(Request req) {
         return Response.redirect("/chat/user/");
     }
@@ -82,7 +83,7 @@ public class ChatServer {
         Bazaruto server = new Bazaruto();
         server.addController(Redirector.class);
         server.addController(ChatServer.class);
-        server.addStaticPath("/static/", new File(STATIC_PATH));
+        server.addStaticPath("/static/", defaultStorage);
         server.startServer();
     }
     

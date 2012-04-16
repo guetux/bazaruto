@@ -2,8 +2,10 @@ package ch.bazaruto;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,15 +17,15 @@ import java.net.Socket;
 import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.Vector;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
+import ch.bazaruto.storage.FileStorage;
+import ch.bazaruto.storage.Storage;
 
 /**
  * A simple, tiny, nicely embeddable HTTP 1.0 (partially 1.1) server in Java
@@ -121,7 +123,8 @@ public class NanoHTTPD {
                     + req.files.getProperty(value) + "'");
         }
 
-        return serveFile(req, myRootDir, true);
+        Storage root = new FileStorage(".");
+        return serveFile(req, root, true);
     }
 
     /**
@@ -747,211 +750,67 @@ public class NanoHTTPD {
     private int myTcpPort = 9000;
     private ServerSocket myServerSocket;
     private Thread myThread;
-    private File myRootDir = new File(".");
 
     // ==================================================
     // File server code
     // ==================================================
 
     /**
-     * Serves file from homeDir and its' subdirectories (only). Uses only URI,
+     * Serves file from a Storage implementation. Uses only URI,
      * ignores all headers and HTTP parameters.
      */
-    public Response serveFile(Request req, File homeDir, boolean allowDirectoryListing) {
+    public Response serveFile(Request req, Storage storage, boolean allowDirectoryListing) {
         
-        String uri = req.uri;
+        String url = req.uri;
         Properties header = req.header;
-        Response res = null;
-        
-        // Make sure we won't die of an exception later
-        if (!homeDir.isDirectory())
-            res = new Response(
-                    "INTERNAL ERRROR: serveFile(): given homeDir is not a directory.",
-                    HTTP_INTERNALERROR, MIME_PLAINTEXT);
+        String path;
 
-        if (res == null) {
-            // Remove URL arguments
-            uri = uri.trim().replace(File.separatorChar, '/');
-            if (uri.indexOf('?') >= 0)
-                uri = uri.substring(0, uri.indexOf('?'));
+        // Get file path
+        url = url.trim().replace(File.separatorChar, '/');
+        if (url.contains("?"))
+        	path = url.substring(0, url.indexOf('?'));
+        else
+        	path = url;
 
-            // Prohibit getting out of current directory
-            if (uri.startsWith("..") || uri.endsWith("..")
-                    || uri.indexOf("../") >= 0)
-                res = new Response(
-                        "FORBIDDEN: Won't serve ../ for security reasons.",
-                        HTTP_FORBIDDEN, MIME_PLAINTEXT);
-        }
-
-        File f = new File(homeDir, uri);
-        if (res == null && !f.exists())
-            res = new Response(
-                    "Error 404, file not found.",
-                    HTTP_NOTFOUND, MIME_PLAINTEXT);
-
-        // List the directory, if necessary
-        if (res == null && f.isDirectory()) {
-            // Browsers get confused without '/' after the
-            // directory, send a redirect.
-            if (!uri.endsWith("/")) {
-                uri += "/";
-                res = new Response(
-                        "<html><body>Redirected: <a href=\"" + uri + "\">"
-                                + uri + "</a></body></html>",
-                        HTTP_REDIRECT, MIME_HTML);
-                res.addHeader("Location", uri);
-            }
-
-            if (res == null) {
-                // First try index.html and index.htm
-                if (new File(f, "index.html").exists())
-                    f = new File(homeDir, uri + "/index.html");
-                else if (new File(f, "index.htm").exists())
-                    f = new File(homeDir, uri + "/index.htm");
-                // No index file, list the directory if it is readable
-                else if (allowDirectoryListing && f.canRead()) {
-                    String[] files = f.list();
-                    String msg = "<html><body><h1>Directory " + uri
-                            + "</h1><br/>";
-
-                    if (uri.length() > 1) {
-                        String u = uri.substring(0, uri.length() - 1);
-                        int slash = u.lastIndexOf('/');
-                        if (slash >= 0 && slash < u.length())
-                            msg += "<b><a href=\""
-                                    + uri.substring(0, slash + 1)
-                                    + "\">..</a></b><br/>";
-                    }
-
-                    if (files != null) {
-                        for (int i = 0; i < files.length; ++i) {
-                            File curFile = new File(f, files[i]);
-                            boolean dir = curFile.isDirectory();
-                            if (dir) {
-                                msg += "<b>";
-                                files[i] += "/";
-                            }
-
-                            msg += "<a href=\"" + encodeUri(uri + files[i])
-                                    + "\">" + files[i] + "</a>";
-
-                            // Show file size
-                            if (curFile.isFile()) {
-                                long len = curFile.length();
-                                msg += " &nbsp;<font size=2>(";
-                                if (len < 1024)
-                                    msg += len + " bytes";
-                                else if (len < 1024 * 1024)
-                                    msg += len / 1024 + "."
-                                            + (len % 1024 / 10 % 100) + " KB";
-                                else
-                                    msg += len / (1024 * 1024) + "." + len
-                                            % (1024 * 1024) / 10 % 100 + " MB";
-
-                                msg += ")</font>";
-                            }
-                            msg += "<br/>";
-                            if (dir)
-                                msg += "</b>";
-                        }
-                    }
-                    msg += "</body></html>";
-                    res = new Response(msg, HTTP_OK, MIME_HTML);
-                } else {
-                    res = new Response(
-                            "FORBIDDEN: No directory listing.",
-                            HTTP_FORBIDDEN, MIME_PLAINTEXT);
-                }
-            }
-        }
-
-        try {
-            if (res == null) {
-                // Get MIME type from file name extension, if possible
-                String mime = null;
-                int dot = f.getCanonicalPath().lastIndexOf('.');
-                if (dot >= 0)
-                    mime = (String) theMimeTypes.get(f.getCanonicalPath()
-                            .substring(dot + 1).toLowerCase());
-                if (mime == null)
-                    mime = MIME_DEFAULT_BINARY;
-
-                // Calculate etag
-                String etag = Integer.toHexString((f.getAbsolutePath()
-                        + f.lastModified() + "" + f.length()).hashCode());
-
-                // Support (simple) skipping:
-                long startFrom = 0;
-                long endAt = -1;
-                String range = header.getProperty("range");
-                if (range != null) {
-                    if (range.startsWith("bytes=")) {
-                        range = range.substring("bytes=".length());
-                        int minus = range.indexOf('-');
-                        try {
-                            if (minus > 0) {
-                                startFrom = Long.parseLong(range.substring(0,
-                                        minus));
-                                endAt = Long.parseLong(range
-                                        .substring(minus + 1));
-                            }
-                        } catch (NumberFormatException nfe) {
-                        }
-                    }
-                }
-
-                // Change return code and add Content-Range header when skipping
-                // is requested
-                long fileLen = f.length();
-                if (range != null && startFrom >= 0) {
-                    if (startFrom >= fileLen) {
-                        res = new Response("", HTTP_RANGE_NOT_SATISFIABLE,
-                                MIME_PLAINTEXT);
-                        res.addHeader("Content-Range", "bytes 0-0/" + fileLen);
-                        res.addHeader("ETag", etag);
-                    } else {
-                        if (endAt < 0)
-                            endAt = fileLen - 1;
-                        long newLen = endAt - startFrom + 1;
-                        if (newLen < 0)
-                            newLen = 0;
-
-                        final long dataLen = newLen;
-                        FileInputStream fis = new FileInputStream(f) {
-                            public int available() throws IOException {
-                                return (int) dataLen;
-                            }
-                        };
-                        fis.skip(startFrom);
-
-                        res = new Response(fis, HTTP_PARTIALCONTENT, mime);
-                        res.addHeader("Content-Length", "" + dataLen);
-                        res.addHeader("Content-Range", "bytes " + startFrom
-                                + "-" + endAt + "/" + fileLen);
-                        res.addHeader("ETag", etag);
-                    }
-                } else {
-                    if (etag.equals(header.getProperty("if-none-match")))
-                        res = new Response("", HTTP_NOTMODIFIED, mime);
-                    else {
-                        res = new Response(new FileInputStream(f), HTTP_OK, mime);
-                        res.addHeader("Content-Length", "" + fileLen);
-                        res.addHeader("ETag", etag);
-                    }
-                }
-            }
-        } catch (IOException ioe) {
-            res = new Response(
-                    "FORBIDDEN: Reading file failed.",
+        // Prohibit getting out of current directory
+        if (path.contains("../")) {
+            return new Response(
+                    "FORBIDDEN: Won't serve ../ for security reasons.",
                     HTTP_FORBIDDEN, MIME_PLAINTEXT);
         }
 
-        res.addHeader("Accept-Ranges", "bytes"); // Announce that the file
-                                                    // server accepts partial
-                                                    // content requestes
-        return res;
-    }
+        if (!storage.exists(path))
+            return new Response(
+                    "Error 404, file not found.",
+                    HTTP_NOTFOUND, MIME_PLAINTEXT);
 
+        // Get MIME type from file name extension, if possible
+        String mime = null;
+        int dot = path.lastIndexOf('.');
+        if (dot >= 0)
+            mime = (String) theMimeTypes.get(path
+                    .substring(dot + 1).toLowerCase());
+        if (mime == null)
+            mime = MIME_DEFAULT_BINARY;
+
+        // Calculate etag
+        String etag = Integer.toHexString((path
+                + storage.lastModified(path) + "" + storage.length(path)).hashCode());
+       
+        if (etag.equals(header.getProperty("if-none-match")))
+            return new Response("", HTTP_NOTMODIFIED, mime);
+        	
+        try {
+	            Response res = new Response(storage.open(path), HTTP_OK, mime);
+	            res.addHeader("Content-Length", "" + storage.length(path));
+	            res.addHeader("ETag", etag);
+	            return res;
+        } catch (FileNotFoundException fnfe) {
+        		return new Response("INTERNAL ERROR: Couldn't open file " + path,
+        			HTTP_INTERNALERROR, MIME_PLAINTEXT);
+        }
+    }
+    
     /**
      * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
      */
