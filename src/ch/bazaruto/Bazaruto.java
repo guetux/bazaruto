@@ -153,20 +153,24 @@ public class Bazaruto extends NanoHTTPD {
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (IllegalAccessException e) {
+        	e.printStackTrace();
             return new Response("Error: Could not instantiate controller "
                     + controller.getName() + ". " + e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (IllegalArgumentException e) {
+        	e.printStackTrace();
             return new Response("Error: Could not invoke method: Wrong number or arguments\n" +
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (InvocationTargetException e) {
+        	e.printStackTrace();
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             return new Response(sw.toString().replaceAll("\n","<br>"),
                     NanoHTTPD.HTTP_INTERNALERROR);
         } catch (SecurityException e) {
+        	e.printStackTrace();
             return new Response("Error: Could not instantiate controller: Security Exception\n" + 
                     e.getMessage(),
                     NanoHTTPD.HTTP_INTERNALERROR);

@@ -133,7 +133,8 @@ public class NanoHTTPD {
     public static final String HTTP_OK = "200 OK",
             HTTP_PARTIALCONTENT = "206 Partial Content",
             HTTP_RANGE_NOT_SATISFIABLE = "416 Requested Range Not Satisfiable",
-            HTTP_REDIRECT = "301 Moved Permanently",
+            HTTP_MOVED = "301 Moved Permanently",
+            HTTP_REDIRECT = "302 Found",
             HTTP_NOTMODIFIED = "304 Not Modified",
             HTTP_FORBIDDEN = "403 Forbidden", HTTP_NOTFOUND = "404 Not Found",
             HTTP_BADREQUEST = "400 Bad Request",
@@ -413,7 +414,7 @@ public class NanoHTTPD {
                     }
                 }
 
-                pre.put("uri", uri);
+                pre.put("uri", uri.trim());
             } catch (IOException ioe) {
                 sendError(
                         HTTP_INTERNALERROR,
