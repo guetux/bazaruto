@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.Properties;
 
-import android.util.Log;
-
 import ch.bazaruto.Bazaruto;
 import ch.bazaruto.Bazaruto.GET;
 import ch.bazaruto.Bazaruto.POST;
@@ -18,7 +16,7 @@ import ch.bazaruto.templates.Template;
 @Route("/chat")
 public class ChatServer {
     
-    public static 
+    public static String STATIC_PATH = "static/example/";
     
     class Message {
         public String username;
@@ -68,7 +66,6 @@ public class ChatServer {
                 s.append(",");
         }
         s.append("]");
-        Log.d("messages", s.toString());
         return new Response(s.toString(), NanoHTTPD.HTTP_OK, "application/json");
     }
     
@@ -85,7 +82,7 @@ public class ChatServer {
         Bazaruto server = new Bazaruto();
         server.addController(Redirector.class);
         server.addController(ChatServer.class);
-        server.addStaticPath("/static/", new File("example/"));
+        server.addStaticPath("/static/", new File(STATIC_PATH));
         server.startServer();
     }
     

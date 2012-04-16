@@ -71,11 +71,14 @@ public class Bazaruto extends NanoHTTPD {
     }
     
     public Response dispatch(Request req) {
+    	Log.info("Req: " + req.uri);
+    	
         for (Entry<Pattern, Class> entry: controllers.entrySet()) {
             Pattern url_pattern = entry.getKey();
             Class controller = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll(url_pattern.pattern(), "");
+                Log.info("Dispatched to:" + controller.getName());
                 return dispatchToMethod(req, controller);
             }
         }
@@ -85,6 +88,7 @@ public class Bazaruto extends NanoHTTPD {
             File path = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.uri = req.uri.replaceAll(url_pattern.pattern(), "");
+                Log.info("Dispatched to:" + path.getAbsolutePath());
                 return serveFile(req, path, false);
             }
         }
