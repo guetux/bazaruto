@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.Properties;
 
+import android.util.Log;
+
 import ch.bazaruto.Bazaruto;
 import ch.bazaruto.Bazaruto.GET;
 import ch.bazaruto.Bazaruto.POST;
@@ -66,6 +68,7 @@ public class ChatServer {
                 s.append(",");
         }
         s.append("]");
+        Log.d("messages", s.toString());
         return new Response(s.toString(), NanoHTTPD.HTTP_OK, "application/json");
     }
     
@@ -78,12 +81,16 @@ public class ChatServer {
         return messages(req);
     }
     
-    public static void main(String[] args) {
+    public static void startapp() {
         Bazaruto server = new Bazaruto();
         server.addController(Redirector.class);
         server.addController(ChatServer.class);
-        server.addStaticPath("/static/", new File("static"));
+        server.addStaticPath("/static/", new File("example/"));
         server.startServer();
+    }
+    
+    public static void main(String[] args) {
+    	startapp();
         try { System.in.read(); } catch( Throwable t ) {}
     }
 }

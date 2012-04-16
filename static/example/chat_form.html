@@ -6,7 +6,7 @@
 
   <title>Chat Form</title>
 
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="/static/jquery-1.7.2.min.js"></script>
   <script type="text/javascript">
   	$(function () {
   		setInterval(function () {
@@ -18,9 +18,12 @@
   						 msg.message + "\n";
   				});
   				messages.text(n);
+  				console.log(n);
+  				/*
   				messages.scrollTop(
   					messages[0].scrollHeight - messages.height()
   				);
+  				*/
   				
   			});
   		}, 1000);
