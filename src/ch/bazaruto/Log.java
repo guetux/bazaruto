@@ -4,8 +4,16 @@ package ch.bazaruto;
 public class Log {
 
 	private static boolean isDebug() {
-		return java.lang.management.ManagementFactory.getRuntimeMXBean().
-			    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0;
+		try {
+			Class mfClass = Class.forName("java.lang.management.ManagementFactory");
+			Object mfInstance = mfClass.newInstance();
+			Object rtMXBean = mfClass.getMethod("getRuntimeMXBean").invoke(mfInstance);
+			Class rtClass = rtMXBean.getClass();
+			Object inputArgs = rtClass.getMethod("getInputArguments").invoke(rtMXBean);
+			return inputArgs.toString().indexOf("-agentlib:jdwp") > 0;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	public static void info(String msg) {
