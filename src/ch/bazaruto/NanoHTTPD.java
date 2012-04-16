@@ -287,37 +287,43 @@ public class NanoHTTPD {
                 if (method.equalsIgnoreCase("POST")) {
                     String contentType = "";
                     String contentTypeHeader = header.getProperty("content-type");
-                    StringTokenizer st = new StringTokenizer(contentTypeHeader, "; ");
-                    if (st.hasMoreTokens())
-                        contentType = st.nextToken();
-
-                    if (contentType.equalsIgnoreCase("multipart/form-data")) {
-                        // Handle multipart/form-data
-                        if (!st.hasMoreTokens())
-                            sendError(
-                                    HTTP_BADREQUEST,
-                                    "BAD REQUEST: Content type is multipart/form-data but boundary missing. Usage: GET /example/file.html");
-                        String boundaryExp = st.nextToken();
-                        st = new StringTokenizer(boundaryExp, "=");
-                        if (st.countTokens() != 2)
-                            sendError(
-                                    HTTP_BADREQUEST,
-                                    "BAD REQUEST: Content type is multipart/form-data but boundary syntax error. Usage: GET /example/file.html");
-                        st.nextToken();
-                        String boundary = st.nextToken();
-
-                        decodeMultipartData(boundary, fbuf, in, parms, files);
-                    } else {
-                        // Handle application/x-www-form-urlencoded
-                        String postLine = "";
-                        char pbuf[] = new char[512];
-                        int read = in.read(pbuf);
-                        while (read >= 0 && !postLine.endsWith("\r\n")) {
-                            postLine += String.valueOf(pbuf, 0, read);
-                            read = in.read(pbuf);
-                        }
-                        postLine = postLine.trim();
-                        decodeParms(postLine, parms);
+                    
+                    // Don't process header if not content-type is null
+                    try {
+	                    StringTokenizer st = new StringTokenizer(contentTypeHeader, "; ");
+	                    if (st.hasMoreTokens())
+	                        contentType = st.nextToken();
+	
+	                    if (contentType.equalsIgnoreCase("multipart/form-data")) {
+	                        // Handle multipart/form-data
+	                        if (!st.hasMoreTokens())
+	                            sendError(
+	                                    HTTP_BADREQUEST,
+	                                    "BAD REQUEST: Content type is multipart/form-data but boundary missing. Usage: GET /example/file.html");
+	                        String boundaryExp = st.nextToken();
+	                        st = new StringTokenizer(boundaryExp, "=");
+	                        if (st.countTokens() != 2)
+	                            sendError(
+	                                    HTTP_BADREQUEST,
+	                                    "BAD REQUEST: Content type is multipart/form-data but boundary syntax error. Usage: GET /example/file.html");
+	                        st.nextToken();
+	                        String boundary = st.nextToken();
+	
+	                        decodeMultipartData(boundary, fbuf, in, parms, files);
+	                    } else {
+	                        // Handle application/x-www-form-urlencoded
+	                        String postLine = "";
+	                        char pbuf[] = new char[512];
+	                        int read = in.read(pbuf);
+	                        while (read >= 0 && !postLine.endsWith("\r\n")) {
+	                            postLine += String.valueOf(pbuf, 0, read);
+	                            read = in.read(pbuf);
+	                        }
+	                        postLine = postLine.trim();
+	                        decodeParms(postLine, parms);
+	                    }
+                    } catch (NullPointerException npe) {
+                    	// content-type was null and headers ignored
                     }
                     
                     
