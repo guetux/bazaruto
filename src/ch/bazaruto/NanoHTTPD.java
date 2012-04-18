@@ -865,13 +865,14 @@ public class NanoHTTPD {
         StringTokenizer st = new StringTokenizer(
                   "css        text/css "
                 + "htm        text/html " 
-                + "html        text/html " 
+                + "html       text/html " 
                 + "xml        text/xml "
+                + "xhtml      application/xhtml+xml "
                 + "txt        text/plain " 
                 + "asc        text/plain " 
                 + "gif        image/gif "
                 + "jpg        image/jpeg " 
-                + "jpeg        image/jpeg " 
+                + "jpeg       image/jpeg " 
                 + "png        image/png "
                 + "mp3        audio/mpeg " 
                 + "m3u        audio/mpeg-url "
@@ -880,13 +881,13 @@ public class NanoHTTPD {
                 + "flv        video/x-flv "
                 + "mov        video/quicktime "
                 + "swf        application/x-shockwave-flash "
-                + "js        application/javascript " 
+                + "js         application/javascript " 
                 + "pdf        application/pdf "
                 + "doc        application/msword " 
                 + "ogg        application/x-ogg "
                 + "zip        application/octet-stream "
                 + "exe        application/octet-stream "
-                + "class    application/octet-stream ");
+                + "class      application/octet-stream ");
         while (st.hasMoreTokens())
             theMimeTypes.put(st.nextToken(), st.nextToken());
     }
