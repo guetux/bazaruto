@@ -839,16 +839,23 @@ public class NanoHTTPD {
         if (mime == null)
             mime = MIME_DEFAULT_BINARY;
 
+        // Calculate last modified
+        Date modified = new Date(storage.lastModified(path));
+        
         // Calculate etag
         String etag = Integer.toHexString((path
                 + storage.lastModified(path) + "" + storage.length(path)).hashCode());
-       
+        
+        if (gmtFrmt.format(modified).equals(req.header.getProperty("if-modified-since")))
+        	return new Response("", HTTP_NOTMODIFIED, mime);
+        
         if (etag.equals(req.header.getProperty("if-none-match")))
             return new Response("", HTTP_NOTMODIFIED, mime);
         	
         try {
 	            Response res = new Response(storage.open(path), HTTP_OK, mime);
 	            res.addHeader("Content-Length", "" + storage.length(path));
+	            res.addHeader("Last-Modified", gmtFrmt.format(modified));
 	            res.addHeader("ETag", etag);
 	            return res;
         } catch (FileNotFoundException fnfe) {
