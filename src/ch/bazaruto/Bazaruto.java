@@ -85,8 +85,8 @@ public class Bazaruto extends NanoHTTPD {
             Pattern url_pattern = entry.getKey();
             Storage storage = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
-                req.uri = req.uri.replaceAll("^"+url_pattern.pattern(), "");
-                return serveFile(req, storage, false);
+                req.path = req.uri.replaceAll("^"+url_pattern.pattern(), "");
+                return serveFile(req, storage, true);
             }
         }
         

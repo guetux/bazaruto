@@ -18,7 +18,7 @@ public class FileStorage implements Storage {
 	}
 	
 	public String[] list(String path) {
-		return homeDir.list();
+		return getFile(path).list();
 	}
 
 	public InputStream open(String path) throws FileNotFoundException {
@@ -29,6 +29,10 @@ public class FileStorage implements Storage {
 		return getFile(path).exists();
 	}
 
+	public boolean isDirectory(String path) {
+		return getFile(path).isDirectory();
+	}
+	
 	public long lastModified(String path) {
 		return getFile(path).lastModified();
 	}

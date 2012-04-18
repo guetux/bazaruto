@@ -762,17 +762,15 @@ public class NanoHTTPD {
      */
     public Response serveFile(Request req, Storage storage, boolean allowDirectoryListing) {
         
-        String url = req.uri;
         Properties header = req.header;
-        String path;
-
+        String url = req.uri;
+        String path = req.path;
+        
         // Get file path
-        url = url.trim().replace(File.separatorChar, '/');
-        if (url.contains("?"))
-        	path = url.substring(0, url.indexOf('?'));
-        else
-        	path = url;
-
+        path = path.replace(File.separatorChar, '/');
+        if (path.contains("?"))
+        	path = path.substring(0, path.indexOf('?'));
+        
         // Prohibit getting out of current directory
         if (path.contains("../")) {
             return new Response(
@@ -785,6 +783,53 @@ public class NanoHTTPD {
                     "Error 404, file not found.",
                     HTTP_NOTFOUND, MIME_PLAINTEXT);
 
+		// List the directory, if necessary
+		if (storage.isDirectory(path)) {
+			// Browsers get confused without '/' after the
+			// directory, send a redirect.
+			if (!url.endsWith("/")) {
+				return Response.redirect(url + "/");
+			}
+
+			// First try index.html and index.htm
+			if (storage.exists(path+"index.html"))
+				return deliverFile(req, storage, path+"index.html");
+			else if (storage.exists(path+"index.htm"))
+				return deliverFile(req, storage, path+"index.htm");
+			// No index file, list the directory if it is readable
+			else if (allowDirectoryListing) {
+				String[] files = storage.list(path);
+				String msg = "<html><body><h1>Directory " + path
+						+ "</h1><br/>";
+
+				if (files != null) {
+					for (int i = 0; i < files.length; ++i) {
+						boolean dir = storage.isDirectory(url+files[i]);
+						if (dir) { 
+							msg += "<b>"; 
+							files[i] += "/"; 
+						}
+
+						msg += "<a href=\"" + encodeUri(files[i])
+								+ "\">" + files[i] + "</a>";
+						
+						msg += "<br/>";
+						if (dir) { msg += "</b>"; }
+					}
+				}
+				
+				msg += "</body></html>";
+				return new Response(msg, HTTP_OK, MIME_HTML);
+			} else {
+				return new Response("FORBIDDEN: No directory listing.", HTTP_FORBIDDEN, MIME_PLAINTEXT);
+			}
+		}
+        
+		return deliverFile(req, storage, path);
+
+    }
+    
+    public Response deliverFile(Request req, Storage storage, String path) {
         // Get MIME type from file name extension, if possible
         String mime = null;
         int dot = path.lastIndexOf('.');
@@ -798,7 +843,7 @@ public class NanoHTTPD {
         String etag = Integer.toHexString((path
                 + storage.lastModified(path) + "" + storage.length(path)).hashCode());
        
-        if (etag.equals(header.getProperty("if-none-match")))
+        if (etag.equals(req.header.getProperty("if-none-match")))
             return new Response("", HTTP_NOTMODIFIED, mime);
         	
         try {
