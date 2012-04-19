@@ -13,8 +13,12 @@ public class FileStorage implements Storage {
 	
 	public FileStorage() {}
 	
-	public FileStorage(String path) {
-		homeDir = new File(path);
+	public FileStorage(File homeDir) {
+		this.homeDir = homeDir;
+	}
+	
+	public FileStorage(String homedir) {
+		this.homeDir = new File(homedir);
 	}
 	
 	public String[] list(String path) {
@@ -42,7 +46,7 @@ public class FileStorage implements Storage {
 	}
 	
 	public File getFile(String path) {
-		return new File(homeDir.getAbsolutePath() + File.separatorChar + path);
+		return new File(homeDir, path);
 	}
 
 }
