@@ -26,7 +26,6 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import ch.bazaruto.storage.FileStorage;
 import ch.bazaruto.storage.Storage;
@@ -167,7 +166,8 @@ public class NanoHTTPD {
     private static int bufferSize = 16 * 1024;
     private int tcpPort = 9000;
     private ServerSocket serverSocket;
-    private int maxConcurrentRequests = 20;
+    private int maxConcurrentRequests = 4;
+    Thread dispatcherThread;
     private ExecutorService execSvc;
 
     
@@ -238,23 +238,24 @@ public class NanoHTTPD {
     // ==================================================
     
     public void start() {
-        if (serverSocket != null && serverSocket.isBound()) 
+        if (serverSocket != null && !serverSocket.isClosed()) 
             return;
         
         try {
             execSvc = Executors.newFixedThreadPool(maxConcurrentRequests);
             serverSocket = new ServerSocket(tcpPort);
-            Thread thread = new Thread(new Runnable() {
+            
+            dispatcherThread = new Thread(new Runnable() {
                 public void run() {
                     try {
                         while (true)
                             execSvc.execute(new HTTPSession(serverSocket.accept()));
-                    } catch (IOException ioe) {
-                    }
+                    } catch (IOException ioe) {}
                 }
             });
-            thread.setDaemon(true);
-            thread.start();
+            //dispatcherThread.setDaemon(true);
+            dispatcherThread.setName("NanoHTTPD Dispatcher");
+            dispatcherThread.start();
         } catch (IOException ioe) {
             System.err.println("Cannot bind to port " + tcpPort + "!");
         }
@@ -264,7 +265,15 @@ public class NanoHTTPD {
      * Stops the server.
      */
     public void stop() {
-        this.execSvc.shutdown();
+        try {
+            serverSocket.close();
+            dispatcherThread.join();
+            this.execSvc.shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
     
     /**
@@ -283,7 +292,7 @@ public class NanoHTTPD {
                 InputStream is = socket.getInputStream();
                 if (is == null)
                     return;
-
+                
                 // Read the first 8192 bytes.
                 // The full header should fit in here.
                 // Apache's default header limit is 8KB.
