@@ -7,8 +7,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Hashtable;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,8 +46,8 @@ public class Bazaruto extends NanoHTTPD {
         String value();
     }
     
-    private Hashtable<Pattern, Class> controllers = new Hashtable<Pattern, Class>();
-    private Hashtable<Pattern, Storage> staticPaths = new Hashtable<Pattern, Storage>();
+    private Map<Pattern, Class> controllers = Collections.synchronizedMap(new LinkedHashMap<Pattern, Class>());
+    private Map<Pattern, Storage> staticPaths = Collections.synchronizedMap(new LinkedHashMap<Pattern, Storage>());
     
     public void addController(Class controller) {
         @SuppressWarnings("unchecked")
