@@ -84,7 +84,7 @@ public class ChatServer {
         server.addController(Redirector.class);
         server.addController(ChatServer.class);
         server.addStaticPath("/static/", defaultStorage);
-        server.startServer();
+        server.start();
     }
     
     public static void main(String[] args) {

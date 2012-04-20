@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -23,9 +24,40 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import ch.bazaruto.storage.FileStorage;
 import ch.bazaruto.storage.Storage;
+
+/*            
+Copyright (C) 2001,2005-2011 by Jarno Elonen <elonen@iki.fi>
+and Copyright (C) 2010 by Konstantinos Togias <info@ktogias.gr>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer. Redistributions in
+binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other
+materials provided with the distribution. The name of the author may not
+be used to endorse or promote products derived from this software without
+specific prior written permission. 
+ 
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /**
  * A simple, tiny, nicely embeddable HTTP 1.0 (partially 1.1) server in Java
@@ -75,10 +107,81 @@ import ch.bazaruto.storage.Storage;
  * 
  * </ul>
  * 
- * See the end of the source file for distribution license (Modified BSD
- * licence)
+ * See the top of the source file for distribution license 
+ * (Modified BSD licence)
  */
 public class NanoHTTPD {
+    // Some HTTP response status codes
+    public static final String 
+            HTTP_OK = "200 OK",
+            HTTP_PARTIALCONTENT = "206 Partial Content",
+            HTTP_RANGE_NOT_SATISFIABLE = "416 Requested Range Not Satisfiable",
+            HTTP_MOVED = "301 Moved Permanently",
+            HTTP_REDIRECT = "302 Found",
+            HTTP_NOTMODIFIED = "304 Not Modified",
+            HTTP_FORBIDDEN = "403 Forbidden", HTTP_NOTFOUND = "404 Not Found",
+            HTTP_BADREQUEST = "400 Bad Request",
+            HTTP_INTERNALERROR = "500 Internal Server Error",
+            HTTP_NOTIMPLEMENTED = "501 Not Implemented";
+
+    // Common mime types for response content
+    public static final String 
+            MIME_PLAINTEXT = "text/plain",
+            MIME_HTML = "text/html",
+            MIME_DEFAULT_BINARY = "application/octet-stream",
+            MIME_XML = "text/xml";
+    
+    // Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
+    private static Hashtable mimeTypes = new Hashtable();
+    static {
+        StringTokenizer st = new StringTokenizer(
+                  "css        text/css "
+                + "htm        text/html " 
+                + "html       text/html " 
+                + "xml        text/xml "
+                + "xhtml      application/xhtml+xml "
+                + "txt        text/plain " 
+                + "asc        text/plain " 
+                + "gif        image/gif "
+                + "jpg        image/jpeg " 
+                + "jpeg       image/jpeg " 
+                + "png        image/png "
+                + "mp3        audio/mpeg " 
+                + "m3u        audio/mpeg-url "
+                + "mp4        video/mp4 " 
+                + "ogv        video/ogg " 
+                + "flv        video/x-flv "
+                + "mov        video/quicktime "
+                + "swf        application/x-shockwave-flash "
+                + "js         application/javascript " 
+                + "pdf        application/pdf "
+                + "doc        application/msword " 
+                + "ogg        application/x-ogg "
+                + "zip        application/octet-stream "
+                + "exe        application/octet-stream "
+                + "class      application/octet-stream ");
+        while (st.hasMoreTokens())
+            mimeTypes.put(st.nextToken(), st.nextToken());
+    }
+
+    private static int bufferSize = 16 * 1024;
+    private int tcpPort = 9000;
+    private ServerSocket serverSocket;
+    private int maxConcurrentRequests = 20;
+    private ExecutorService execSvc;
+
+    
+    /**
+     * GMT date formatter
+     */
+    private static final ThreadLocal<SimpleDateFormat> gmtFrmt = new ThreadLocal<SimpleDateFormat>() {
+        protected SimpleDateFormat initialValue() {
+            SimpleDateFormat gmtFrmt = new SimpleDateFormat( "E, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+            gmtFrmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+            return gmtFrmt;
+        };
+    };
+    
     // ==================================================
     // API parts
     // ==================================================
@@ -102,24 +205,25 @@ public class NanoHTTPD {
      * @return HTTP response, see class Response for details
      */
     public Response serve(Request req) {
-        myOut.println(req.method + " '" + req.uri + "' ");
+        PrintStream out = System.out;
+        out.println(req.method + " '" + req.uri + "' ");
 
         Enumeration e = req.header.propertyNames();
         while (e.hasMoreElements()) {
             String value = (String) e.nextElement();
-            myOut.println("  HDR: '" + value + "' = '"
+            out.println("  HDR: '" + value + "' = '"
                     + req.header.getProperty(value) + "'");
         }
         e = req.parms.propertyNames();
         while (e.hasMoreElements()) {
             String value = (String) e.nextElement();
-            myOut.println("  PRM: '" + value + "' = '"
+            out.println("  PRM: '" + value + "' = '"
                     + req.parms.getProperty(value) + "'");
         }
         e = req.files.propertyNames();
         while (e.hasMoreElements()) {
             String value = (String) e.nextElement();
-            myOut.println("  UPLOADED: '" + value + "' = '"
+            out.println("  UPLOADED: '" + value + "' = '"
                     + req.files.getProperty(value) + "'");
         }
 
@@ -127,79 +231,56 @@ public class NanoHTTPD {
         return serveFile(req, root, true);
     }
 
-    /**
-     * Some HTTP response status codes
-     */
-    public static final String HTTP_OK = "200 OK",
-            HTTP_PARTIALCONTENT = "206 Partial Content",
-            HTTP_RANGE_NOT_SATISFIABLE = "416 Requested Range Not Satisfiable",
-            HTTP_MOVED = "301 Moved Permanently",
-            HTTP_REDIRECT = "302 Found",
-            HTTP_NOTMODIFIED = "304 Not Modified",
-            HTTP_FORBIDDEN = "403 Forbidden", HTTP_NOTFOUND = "404 Not Found",
-            HTTP_BADREQUEST = "400 Bad Request",
-            HTTP_INTERNALERROR = "500 Internal Server Error",
-            HTTP_NOTIMPLEMENTED = "501 Not Implemented";
-
-    /**
-     * Common mime types for dynamic content
-     */
-    public static final String MIME_PLAINTEXT = "text/plain",
-            MIME_HTML = "text/html",
-            MIME_DEFAULT_BINARY = "application/octet-stream",
-            MIME_XML = "text/xml";
-
+    
+    
     // ==================================================
     // Socket & server code
     // ==================================================
-
-    public void startServer() {
-
-        try {
-            myServerSocket = new ServerSocket(myTcpPort);
-        } catch (IOException ioe) {
-            System.err.println("Cannot bind to port " + myTcpPort + "!");
-        }
+    
+    public void start() {
+        if (serverSocket != null && serverSocket.isBound()) 
+            return;
         
-        myThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    while (true)
-                        new HTTPSession(myServerSocket.accept());
-                } catch (IOException ioe) {
+        try {
+            execSvc = Executors.newFixedThreadPool(maxConcurrentRequests);
+            serverSocket = new ServerSocket(tcpPort);
+            Thread thread = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        while (true)
+                            execSvc.execute(new HTTPSession(serverSocket.accept()));
+                    } catch (IOException ioe) {
+                    }
                 }
-            }
-        });
-        myThread.setDaemon(true);
-        myThread.start();
+            });
+            thread.setDaemon(true);
+            thread.start();
+        } catch (IOException ioe) {
+            System.err.println("Cannot bind to port " + tcpPort + "!");
+        }
     }
     
     /**
      * Stops the server.
      */
     public void stop() {
-        try {
-            myServerSocket.close();
-            myThread.join();
-        } catch (IOException ioe) {
-        } catch (InterruptedException e) {}
+        this.execSvc.shutdown();
     }
-
+    
     /**
      * Handles one session, i.e. parses the HTTP request and returns the
      * response.
      */
     private class HTTPSession implements Runnable {
+        private Socket socket;
+        
         public HTTPSession(Socket s) {
-            mySocket = s;
-            Thread t = new Thread(this);
-            t.setDaemon(true);
-            t.start();
+            socket = s;
         }
 
         public void run() {
             try {
-                InputStream is = mySocket.getInputStream();
+                InputStream is = socket.getInputStream();
                 if (is == null)
                     return;
 
@@ -213,10 +294,8 @@ public class NanoHTTPD {
                     return;
 
                 // Create a BufferedReader for parsing the header.
-                ByteArrayInputStream hbis = new ByteArrayInputStream(buf, 0,
-                        rlen);
-                BufferedReader hin = new BufferedReader(new InputStreamReader(
-                        hbis));
+                ByteArrayInputStream hbis = new ByteArrayInputStream(buf, 0, rlen);
+                BufferedReader hin = new BufferedReader(new InputStreamReader(hbis));
                 Properties pre = new Properties();
                 Properties parms = new Properties();
                 Properties header = new Properties();
@@ -294,68 +373,69 @@ public class NanoHTTPD {
                     
                     // Don't process header if not content-type is null
                     try {
-	                    StringTokenizer st = new StringTokenizer(contentTypeHeader, "; ");
-	                    if (st.hasMoreTokens())
-	                        contentType = st.nextToken();
-	
-	                    if (contentType.equalsIgnoreCase("multipart/form-data")) {
-	                        // Handle multipart/form-data
-	                        if (!st.hasMoreTokens())
-	                            sendError(
-	                                    HTTP_BADREQUEST,
-	                                    "BAD REQUEST: Content type is multipart/form-data but boundary missing. Usage: GET /example/file.html");
-	                        String boundaryExp = st.nextToken();
-	                        st = new StringTokenizer(boundaryExp, "=");
-	                        if (st.countTokens() != 2)
-	                            sendError(
-	                                    HTTP_BADREQUEST,
-	                                    "BAD REQUEST: Content type is multipart/form-data but boundary syntax error. Usage: GET /example/file.html");
-	                        st.nextToken();
-	                        String boundary = st.nextToken();
-	
-	                        decodeMultipartData(boundary, fbuf, in, parms, files);
-	                    } else {
-	                        // Handle application/x-www-form-urlencoded
-	                        String postLine = "";
-	                        char pbuf[] = new char[512];
-	                        int read = in.read(pbuf);
-	                        while (read >= 0 && !postLine.endsWith("\r\n")) {
-	                            postLine += String.valueOf(pbuf, 0, read);
-	                            read = in.read(pbuf);
-	                        }
-	                        postLine = postLine.trim();
-	                        decodeParms(postLine, parms);
-	                    }
+                        StringTokenizer st = new StringTokenizer(contentTypeHeader, "; ");
+                        if (st.hasMoreTokens())
+                            contentType = st.nextToken();
+    
+                        if (contentType.equalsIgnoreCase("multipart/form-data")) {
+                            // Handle multipart/form-data
+                            if (!st.hasMoreTokens())
+                                sendError("BAD REQUEST: Content type is multipart/form-data " +
+                                          "but boundary missing. Usage: GET /example/file.html",
+                                          HTTP_BADREQUEST);
+                            String boundaryExp = st.nextToken();
+                            st = new StringTokenizer(boundaryExp, "=");
+                            if (st.countTokens() != 2)
+                                sendError("BAD REQUEST: Content type is multipart/form-data but " +
+                                        "boundary syntax error. Usage: GET /example/file.html", 
+                                        HTTP_BADREQUEST);
+                            st.nextToken();
+                            String boundary = st.nextToken();
+    
+                            decodeMultipartData(boundary, fbuf, in, parms, files);
+                        } else {
+                            // Handle application/x-www-form-urlencoded
+                            String postLine = "";
+                            char pbuf[] = new char[512];
+                            int read = in.read(pbuf);
+                            while (read >= 0 && !postLine.endsWith("\r\n")) {
+                                postLine += String.valueOf(pbuf, 0, read);
+                                read = in.read(pbuf);
+                            }
+                            postLine = postLine.trim();
+                            decodeParms(postLine, parms);
+                        }
                     } catch (NullPointerException npe) {
-                    	// content-type was null and headers ignored
+                        // content-type was null and headers ignored
                     }
                     
                     
                 }
                 
-                // Build request
-                Request req = new Request(method, uri, parms, header, files);
-                
-
                 if (method.equalsIgnoreCase("PUT"))
                     files.put("content", saveTmpFile(fbuf, 0, f.size()));
+                
+                // Build request
+                Request req = new Request(method, uri, parms, header, files);
 
                 // Ok, now do the serve()
-                Response r = serve(req);
-                if (r == null)
-                    sendError(HTTP_INTERNALERROR,
-                            "SERVER INTERNAL ERROR: Serve() returned a null response.");
-                else
-                    sendResponse(r.status, r.mimeType, r.header, r.data);
-
+                Response res = serve(req);
+                
+                if (res != null) {
+                    sendResponse(res);
+                } else {
+                    sendError("SERVER INTERNAL ERROR: " + 
+                            "Serve() returned a null response.", 
+                            HTTP_INTERNALERROR);                    
+                }
+                
                 in.close();
                 is.close();
             } catch (IOException ioe) {
                 try {
-                    sendError(
-                            HTTP_INTERNALERROR,
-                            "SERVER INTERNAL ERROR: IOException: "
-                                    + ioe.getMessage());
+                    sendError("SERVER INTERNAL ERROR: " + 
+                            " IOException: " + ioe.getMessage(),
+                            HTTP_INTERNALERROR);
                 } catch (Throwable t) {
                 }
             } catch (InterruptedException ie) {
@@ -656,23 +736,26 @@ public class NanoHTTPD {
          * Returns an error message as a HTTP response and throws
          * InterruptedException to stop further request processing.
          */
-        private void sendError(String status, String msg)
-                throws InterruptedException {
-            sendResponse(status, MIME_PLAINTEXT, null,
-                    new ByteArrayInputStream(msg.getBytes()));
+        private void sendError(String msg, String status) throws InterruptedException {
+            Response res = new Response(msg, status, MIME_PLAINTEXT);
+            sendResponse(res);
             throw new InterruptedException();
         }
 
         /**
          * Sends given response to the socket.
          */
-        private void sendResponse(String status, String mime,
-                Properties header, InputStream data) {
+        private void sendResponse(Response res) {
+            String status = res.status;
+            String mime = res.mimeType;
+            Properties header = res.header;
+            InputStream data = res.data;
+            
             try {
                 if (status == null)
                     throw new Error("sendResponse(): Status can't be null.");
 
-                OutputStream out = mySocket.getOutputStream();
+                OutputStream out = socket.getOutputStream();
                 PrintWriter pw = new PrintWriter(out);
                 pw.print("HTTP/1.0 " + status + " \r\n");
 
@@ -680,7 +763,7 @@ public class NanoHTTPD {
                     pw.print("Content-Type: " + mime + "\r\n");
 
                 if (header == null || header.getProperty("Date") == null)
-                    pw.print("Date: " + gmtFrmt.format(new Date()) + "\r\n");
+                    pw.print("Date: " + gmtFrmt.get().format(new Date()) + "\r\n");
 
                 if (header != null) {
                     Enumeration e = header.keys();
@@ -698,10 +781,10 @@ public class NanoHTTPD {
                     int pending = data.available(); // This is to support
                                                     // partial sends, see
                                                     // serveFile()
-                    byte[] buff = new byte[theBufferSize];
+                    byte[] buff = new byte[bufferSize];
                     while (pending > 0) {
                         int read = data.read(buff, 0,
-                                ((pending > theBufferSize) ? theBufferSize
+                                ((pending > bufferSize) ? bufferSize
                                         : pending));
                         if (read <= 0)
                             break;
@@ -716,13 +799,10 @@ public class NanoHTTPD {
             } catch (IOException ioe) {
                 // Couldn't write? No can do.
                 try {
-                    mySocket.close();
-                } catch (Throwable t) {
-                }
+                    socket.close();
+                } catch (Throwable t) {}
             }
         }
-
-        private Socket mySocket;
     }
 
     /**
@@ -747,11 +827,7 @@ public class NanoHTTPD {
         }
         return newUri;
     }
-
-    private int myTcpPort = 9000;
-    private ServerSocket myServerSocket;
-    private Thread myThread;
-
+    
     // ==================================================
     // File server code
     // ==================================================
@@ -769,7 +845,7 @@ public class NanoHTTPD {
         // Get file path
         path = path.replace(File.separatorChar, '/');
         if (path.contains("?"))
-        	path = path.substring(0, path.indexOf('?'));
+            path = path.substring(0, path.indexOf('?'));
         
         // Prohibit getting out of current directory
         if (path.contains("../")) {
@@ -783,58 +859,58 @@ public class NanoHTTPD {
                     "Error 404, file not found.",
                     HTTP_NOTFOUND, MIME_PLAINTEXT);
 
-		// List the directory, if necessary
-		if (storage.isDirectory(path)) {
-			// Browsers get confused without '/' after the
-			// directory, send a redirect.
-			if (!url.endsWith("/")) {
-				return Response.redirect(url + "/");
-			}
+        // List the directory, if necessary
+        if (storage.isDirectory(path)) {
+            // Browsers get confused without '/' after the
+            // directory, send a redirect.
+            if (!url.endsWith("/")) {
+                return Response.redirect(url + "/");
+            }
 
-			// First try index.html and index.htm
-			if (storage.exists(path+"index.html"))
-				return deliverFile(req, storage, path+"index.html");
-			else if (storage.exists(path+"index.htm"))
-				return deliverFile(req, storage, path+"index.htm");
-			// No index file, list the directory if it is readable
-			else if (allowDirectoryListing) {
-				String[] files = storage.list(path);
-				String msg = "<html><body><h1>Directory " + path
-						+ "</h1><br/>";
+            // First try index.html and index.htm
+            if (storage.exists(path+"index.html"))
+                return deliverFile(req, storage, path+"index.html");
+            else if (storage.exists(path+"index.htm"))
+                return deliverFile(req, storage, path+"index.htm");
+            // No index file, list the directory if it is readable
+            else if (allowDirectoryListing) {
+                String[] files = storage.list(path);
+                String msg = "<html><body><h1>Directory " + path
+                        + "</h1><br/>";
 
-				if (files != null) {
-					for (int i = 0; i < files.length; ++i) {
-						boolean dir = storage.isDirectory(url+files[i]);
-						if (dir) { 
-							msg += "<b>"; 
-							files[i] += "/"; 
-						}
+                if (files != null) {
+                    for (int i = 0; i < files.length; ++i) {
+                        boolean dir = storage.isDirectory(url+files[i]);
+                        if (dir) { 
+                            msg += "<b>"; 
+                            files[i] += "/"; 
+                        }
 
-						msg += "<a href=\"" + encodeUri(files[i])
-								+ "\">" + files[i] + "</a>";
-						
-						msg += "<br/>";
-						if (dir) { msg += "</b>"; }
-					}
-				}
-				
-				msg += "</body></html>";
-				return new Response(msg, HTTP_OK, MIME_HTML);
-			} else {
-				return new Response("FORBIDDEN: No directory listing.", HTTP_FORBIDDEN, MIME_PLAINTEXT);
-			}
-		}
+                        msg += "<a href=\"" + encodeUri(files[i])
+                                + "\">" + files[i] + "</a>";
+                        
+                        msg += "<br/>";
+                        if (dir) { msg += "</b>"; }
+                    }
+                }
+                
+                msg += "</body></html>";
+                return new Response(msg, HTTP_OK, MIME_HTML);
+            } else {
+                return new Response("FORBIDDEN: No directory listing.", HTTP_FORBIDDEN, MIME_PLAINTEXT);
+            }
+        }
         
-		return deliverFile(req, storage, path);
+        return deliverFile(req, storage, path);
 
     }
     
-    public Response deliverFile(Request req, Storage storage, String path) {
+    public Response deliverFile(Request req, Storage storage, String path) {       
         // Get MIME type from file name extension, if possible
         String mime = null;
         int dot = path.lastIndexOf('.');
         if (dot >= 0)
-            mime = (String) theMimeTypes.get(path
+            mime = (String) mimeTypes.get(path
                     .substring(dot + 1).toLowerCase());
         if (mime == null)
             mime = MIME_DEFAULT_BINARY;
@@ -846,101 +922,22 @@ public class NanoHTTPD {
         String etag = Integer.toHexString((path
                 + storage.lastModified(path) + "" + storage.length(path)).hashCode());
         
-        if (gmtFrmt.format(modified).equals(req.header.getProperty("if-modified-since")))
-        	return new Response("", HTTP_NOTMODIFIED, mime);
+        //if (gmtFrmt.format(modified).equals(req.header.getProperty("if-modified-since")))
+        //    return new Response("", HTTP_NOTMODIFIED, mime);
         
         if (etag.equals(req.header.getProperty("if-none-match")))
             return new Response("", HTTP_NOTMODIFIED, mime);
-        	
+            
         try {
-	            Response res = new Response(storage.open(path), HTTP_OK, mime);
-	            res.addHeader("Content-Length", "" + storage.length(path));
-	            res.addHeader("Last-Modified", gmtFrmt.format(modified));
-	            res.addHeader("ETag", etag);
-	            return res;
+                Response res = new Response(storage.open(path), HTTP_OK, mime);
+                res.addHeader("Content-Length", "" + storage.length(path));
+                res.addHeader("Last-Modified", gmtFrmt.get().format(modified));
+                res.addHeader("ETag", etag);
+                return res;
         } catch (FileNotFoundException fnfe) {
-        		return new Response("INTERNAL ERROR: Couldn't open file " + path,
-        			HTTP_INTERNALERROR, MIME_PLAINTEXT);
+                return new Response("INTERNAL ERROR: Couldn't open file " + path,
+                    HTTP_INTERNALERROR, MIME_PLAINTEXT);
         }
     }
-    
-    /**
-     * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
-     */
-    private static Hashtable theMimeTypes = new Hashtable();
-    static {
-        StringTokenizer st = new StringTokenizer(
-                  "css        text/css "
-                + "htm        text/html " 
-                + "html       text/html " 
-                + "xml        text/xml "
-                + "xhtml      application/xhtml+xml "
-                + "txt        text/plain " 
-                + "asc        text/plain " 
-                + "gif        image/gif "
-                + "jpg        image/jpeg " 
-                + "jpeg       image/jpeg " 
-                + "png        image/png "
-                + "mp3        audio/mpeg " 
-                + "m3u        audio/mpeg-url "
-                + "mp4        video/mp4 " 
-                + "ogv        video/ogg " 
-                + "flv        video/x-flv "
-                + "mov        video/quicktime "
-                + "swf        application/x-shockwave-flash "
-                + "js         application/javascript " 
-                + "pdf        application/pdf "
-                + "doc        application/msword " 
-                + "ogg        application/x-ogg "
-                + "zip        application/octet-stream "
-                + "exe        application/octet-stream "
-                + "class      application/octet-stream ");
-        while (st.hasMoreTokens())
-            theMimeTypes.put(st.nextToken(), st.nextToken());
-    }
 
-    private static int theBufferSize = 16 * 1024;
-
-    // Change this if you want to log to somewhere else than stdout
-    protected static PrintStream myOut = System.out;
-
-    /**
-     * GMT date formatter
-     */
-    private static java.text.SimpleDateFormat gmtFrmt;
-    static {
-        gmtFrmt = new java.text.SimpleDateFormat(
-                "E, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
-        gmtFrmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
-
-    /**
-     * The distribution licence
-     */
-    private static final String LICENCE = 
-              "Copyright (C) 2001,2005-2011 by Jarno Elonen <elonen@iki.fi>\n"
-            + "and Copyright (C) 2010 by Konstantinos Togias <info@ktogias.gr>\n"
-            + "\n"
-            + "Redistribution and use in source and binary forms, with or without\n"
-            + "modification, are permitted provided that the following conditions\n"
-            + "are met:\n"
-            + "\n"
-            + "Redistributions of source code must retain the above copyright notice,\n"
-            + "this list of conditions and the following disclaimer. Redistributions in\n"
-            + "binary form must reproduce the above copyright notice, this list of\n"
-            + "conditions and the following disclaimer in the documentation and/or other\n"
-            + "materials provided with the distribution. The name of the author may not\n"
-            + "be used to endorse or promote products derived from this software without\n"
-            + "specific prior written permission. \n"
-            + " \n"
-            + "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
-            + "IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
-            + "OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
-            + "IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
-            + "INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
-            + "NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-            + "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-            + "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-            + "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-            + "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.";
 }

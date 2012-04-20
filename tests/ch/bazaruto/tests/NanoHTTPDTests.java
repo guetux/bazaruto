@@ -45,7 +45,7 @@ public class NanoHTTPDTests {
         
         try {
             httpd = new TimesTwoHTTPD();
-            httpd.startServer();
+            httpd.start();
             HttpGet httpget = new HttpGet("http://localhost:9000/?i=21");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);
@@ -70,7 +70,7 @@ public class NanoHTTPDTests {
         
         try {
             httpd = new TimesTwoHTTPD();
-            httpd.startServer();
+            httpd.start();
             HttpPost httppost = new HttpPost("http://localhost:9000/");
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
             nameValuePairs.add(new BasicNameValuePair("i","21"));
@@ -98,7 +98,7 @@ public class NanoHTTPDTests {
         
         try {
             httpd = new TimesTwoHTTPD();
-            httpd.startServer();
+            httpd.start();
             HttpGet httpget = new HttpGet("http://localhost:9000/?i=8.4");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);
@@ -123,7 +123,7 @@ public class NanoHTTPDTests {
         
         try {
             httpd = new TimesTwoHTTPD();
-            httpd.startServer();
+            httpd.start();
             HttpPost httppost = new HttpPost("http://localhost:9000/");
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
             nameValuePairs.add(new BasicNameValuePair("i","8.4"));
@@ -152,7 +152,7 @@ public class NanoHTTPDTests {
         
         try {
             httpd = new TestHTTPD();
-            httpd.startServer();
+            httpd.start();
             HttpGet httpget = new HttpGet("http://localhost:9000/");
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             response = httpclient.execute(httpget, responseHandler);
