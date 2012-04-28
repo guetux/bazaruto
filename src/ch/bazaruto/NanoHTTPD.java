@@ -128,10 +128,11 @@ public class NanoHTTPD {
             MIME_PLAINTEXT = "text/plain",
             MIME_HTML = "text/html",
             MIME_DEFAULT_BINARY = "application/octet-stream",
-            MIME_XML = "text/xml";
+            MIME_XML = "text/xml",
+    		MIME_JSON= "application/json";
     
     // Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
-    private static Hashtable mimeTypes = new Hashtable();
+    private static Hashtable<String, String> mimeTypes = new Hashtable<String, String>();
     static {
         StringTokenizer st = new StringTokenizer(
                   "css        text/css "
@@ -208,7 +209,7 @@ public class NanoHTTPD {
         PrintStream out = System.out;
         out.println(req.method + " '" + req.uri + "' ");
 
-        Enumeration e = req.header.propertyNames();
+        Enumeration<?> e = req.header.propertyNames();
         while (e.hasMoreElements()) {
             String value = (String) e.nextElement();
             out.println("  HDR: '" + value + "' = '"
@@ -608,14 +609,14 @@ public class NanoHTTPD {
         public int[] getBoundaryPositions(byte[] b, byte[] boundary) {
             int matchcount = 0;
             int matchbyte = -1;
-            Vector matchbytes = new Vector();
+            Vector<Integer> matchbytes = new Vector<Integer>();
             for (int i = 0; i < b.length; i++) {
                 if (b[i] == boundary[matchcount]) {
                     if (matchcount == 0)
                         matchbyte = i;
                     matchcount++;
                     if (matchcount == boundary.length) {
-                        matchbytes.addElement(new Integer(matchbyte));
+                        matchbytes.addElement(matchbyte);
                         matchcount = 0;
                         matchbyte = -1;
                     }
@@ -775,7 +776,7 @@ public class NanoHTTPD {
                     pw.print("Date: " + gmtFrmt.get().format(new Date()) + "\r\n");
 
                 if (header != null) {
-                    Enumeration e = header.keys();
+                    Enumeration<?> e = header.keys();
                     while (e.hasMoreElements()) {
                         String key = (String) e.nextElement();
                         String value = header.getProperty(key);
@@ -847,7 +848,6 @@ public class NanoHTTPD {
      */
     public Response serveFile(Request req, Storage storage, boolean allowDirectoryListing) {
         
-        Properties header = req.header;
         String url = req.uri;
         String path = req.path;
         

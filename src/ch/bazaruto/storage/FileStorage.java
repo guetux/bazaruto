@@ -3,9 +3,7 @@ package ch.bazaruto.storage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 
 public class FileStorage implements Storage {
 

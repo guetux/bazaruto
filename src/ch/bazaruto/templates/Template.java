@@ -1,7 +1,6 @@
 package ch.bazaruto.templates;
 
 import java.util.Enumeration;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 
@@ -39,7 +38,7 @@ public class Template {
     public String render() {
         String result = this.template;
 
-        for (Enumeration e = this.context.propertyNames(); e.hasMoreElements(); ) {
+        for (Enumeration<?> e = this.context.propertyNames(); e.hasMoreElements(); ) {
             String key = (String)e.nextElement();
             String value = this.context.getProperty(key);
             result = result.replaceAll("@" + key, value);
