@@ -12,7 +12,7 @@ import ch.bazaruto.Request;
 import ch.bazaruto.Response;
 import ch.bazaruto.tests.controllers.SimpleController1;
 
-public class BazarutoTests {
+public class BasicHTTPTests {
     
     public Bazaruto bazaruto = new Bazaruto();
 
