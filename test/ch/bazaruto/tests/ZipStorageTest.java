@@ -44,6 +44,16 @@ public class ZipStorageTest {
 	}
 	
 	@Test
+	public void exists_index() {
+		assertThat(zip.exists(""), is(true));
+	}
+	
+	@Test
+	public void exists_dot_index() {
+		assertThat(zip.exists("."), is(true));
+	}
+	
+	@Test
 	public void file_does_not_exist() {
 		assertThat(zip.exists("file8.txt"), is(false));
 	}
@@ -102,6 +112,11 @@ public class ZipStorageTest {
 	@Test
 	public void not_isDirectory_file2() {
 		assertThat(zip.isDirectory("folder1/file2.txt"), is(false));
+	}
+	
+	@Test
+	public void isDirectory_index() {
+		assertThat(zip.isDirectory(""), is(true));
 	}
 	
 	@Test

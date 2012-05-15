@@ -45,10 +45,16 @@ public class ZipStorage implements Storage {
 	}
 
 	public boolean exists(String path) {
+		if (path.equals("") || path.equals(".")) {
+			return true;
+		}
 		return getZipEntry(path) != null;
 	}
 
 	public boolean isDirectory(String path) {
+		if (path.equals("") || path.equals(".")) {
+			return true;
+		}
 		ZipEntry ze = getZipEntry(path);
 		return ze != null && ze.isDirectory();
 	}
@@ -73,7 +79,6 @@ public class ZipStorage implements Storage {
 	}
 	
 	private ZipEntry getZipEntry(String path) {
-		System.out.println(path);
 		Enumeration<? extends ZipEntry> e = zipFile.entries();
 		while(e.hasMoreElements()) {
 			ZipEntry entry = e.nextElement();
