@@ -5,7 +5,11 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ BasicHTTPTests.class, NanoHTTPDTests.class })
+@SuiteClasses({ 
+	BasicHTTPTests.class, 
+	NanoHTTPDTests.class,
+	ZipStorageTest.class,
+})
 public class AllTests {
 
 }
