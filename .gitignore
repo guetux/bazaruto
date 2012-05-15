@@ -19,6 +19,9 @@ local.properties
 # Locally stored "Eclipse launch configurations"
 *.launch
 
+# gradle stuff
+build
+.gradle
 
 # Java
 *.class
