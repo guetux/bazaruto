@@ -820,7 +820,7 @@ public class NanoHTTPD {
      * URL-encodes everything between "/"-characters. Encodes spaces as '%20'
      * instead of '+'.
      */
-    private String encodeUri(String uri) {
+    public static String encodeUri(String uri) {
         String newUri = "";
         StringTokenizer st = new StringTokenizer(uri, "/ ", true);
         while (st.hasMoreTokens()) {
@@ -846,7 +846,7 @@ public class NanoHTTPD {
      * Serves file from a Storage implementation. Uses only URI,
      * ignores all headers and HTTP parameters.
      */
-    public Response serveFile(Request req, Storage storage, boolean allowDirectoryListing) {
+    public static Response serveFile(Request req, Storage storage, boolean allowDirectoryListing) {
         
         String url = req.uri;
         String path = req.path;
@@ -914,7 +914,7 @@ public class NanoHTTPD {
 
     }
     
-    public Response deliverFile(Request req, Storage storage, String path) {       
+    public static Response deliverFile(Request req, Storage storage, String path) {       
         // Get MIME type from file name extension, if possible
         String mime = null;
         int dot = path.lastIndexOf('.');
