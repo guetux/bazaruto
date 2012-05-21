@@ -168,7 +168,7 @@ public class NanoHTTPD {
     private static int bufferSize = 16 * 1024;
     private int tcpPort = 9000;
     private ServerSocket serverSocket;
-    private int maxConcurrentRequests = 4;
+    public int maxConcurrentRequests = 4;
     Thread dispatcherThread;
     private ExecutorService execSvc;
 
@@ -240,6 +240,11 @@ public class NanoHTTPD {
     // ==================================================
     
     public void start() {
+    	start(tcpPort);
+    }
+    
+    public void start(int port) {
+    	tcpPort = port;
         if (serverSocket != null && !serverSocket.isClosed()) 
             return;
         
