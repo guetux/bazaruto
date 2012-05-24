@@ -68,7 +68,7 @@ public class Response {
         this.status = status;
     }
 
-    private InputStream toInputStream(String txt) {
+    public InputStream toInputStream(String txt) {
         return new ByteArrayInputStream(txt.getBytes());
     }
     
