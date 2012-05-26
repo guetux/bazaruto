@@ -61,6 +61,11 @@ public class Bazaruto extends NanoHTTPD {
         }
     }
     
+    public void addController(String route, Class controller) {
+    	Pattern url_pattern = Pattern.compile(route);
+    	controllers.put(url_pattern, controller);
+    }
+    
     public void removeController(Class controller){
         for (Entry<Pattern, Class> e: controllers.entrySet()) {
             if (e.getValue() == controller)
