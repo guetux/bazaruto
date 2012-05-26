@@ -266,7 +266,6 @@ public class NanoHTTPD {
     		System.out.println("Server started on " + 
     				serverSocket.getInetAddress().getHostAddress() + ":" + 
     				serverSocket.getLocalPort());
-    		System.out.println("Press Ctrl-D to quit");
         } catch (IOException ioe) {
             System.err.println("Cannot bind to port " + tcpPort + "!");
         }

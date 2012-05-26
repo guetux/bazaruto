@@ -88,6 +88,7 @@ public class Bazaruto extends NanoHTTPD {
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll(url_pattern.pattern(), "");
                 response = dispatchToMethod(req, controller);
+                return deliver(req, response);
             }
         }
         
@@ -97,14 +98,18 @@ public class Bazaruto extends NanoHTTPD {
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll("^"+url_pattern.pattern(), "");
                 response = serveFile(req, storage, true);
+                return deliver(req, response);
             }
         }
         
-        if (response == null) {
-	        response = new Response("Page not found: Nothing registered to this uri",
+        // Nothing found on this url, send 404
+	    response = new Response("Page not found: Nothing registered to this uri",
 	                NanoHTTPD.HTTP_NOTFOUND);
-        }
-        
+    	return deliver(req, response);
+    }
+    
+    public Response deliver(Request req, Response response) {
+    	
     	if (logRequests) {
     		System.out.println("\""+req.getRequestLine()+"\" " + response.status);
     	}
