@@ -48,6 +48,7 @@ public class Bazaruto extends NanoHTTPD {
     
     private Map<Pattern, Class> controllers = Collections.synchronizedMap(new LinkedHashMap<Pattern, Class>());
     private Map<Pattern, Storage> staticPaths = Collections.synchronizedMap(new LinkedHashMap<Pattern, Storage>());
+    private boolean logRequests = false;
     
     public void addController(Class controller) {
         @SuppressWarnings("unchecked")
@@ -79,12 +80,14 @@ public class Bazaruto extends NanoHTTPD {
     }
     
     public Response dispatch(Request req) {
+    	Response response = null;
+    	
         for (Entry<Pattern, Class> entry: controllers.entrySet()) {
             Pattern url_pattern = entry.getKey();
             Class controller = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll(url_pattern.pattern(), "");
-                return dispatchToMethod(req, controller);
+                response = dispatchToMethod(req, controller);
             }
         }
         
@@ -93,12 +96,20 @@ public class Bazaruto extends NanoHTTPD {
             Storage storage = entry.getValue();
             if (url_pattern.matcher(req.uri).find()) {
                 req.path = req.uri.replaceAll("^"+url_pattern.pattern(), "");
-                return serveFile(req, storage, true);
+                response = serveFile(req, storage, true);
             }
         }
         
-        return new Response("Page not found: No Controller registered to this uri",
-                NanoHTTPD.HTTP_NOTFOUND);
+        if (response == null) {
+	        response = new Response("Page not found: Nothing registered to this uri",
+	                NanoHTTPD.HTTP_NOTFOUND);
+        }
+        
+    	if (logRequests) {
+    		System.out.println("\""+req.getRequestLine()+"\" " + response.status);
+    	}
+    	
+    	return response;
     }
     
     private Response dispatchToMethod(Request req, Class controller) {
@@ -209,6 +220,14 @@ public class Bazaruto extends NanoHTTPD {
         }
         return parameters.toArray();
         
+    }
+    
+    public void enableRequestLogging() {
+    	logRequests = true;
+    }
+    
+    public void disableRequestLogging() {
+    	logRequests = false;
     }
     
     @Override

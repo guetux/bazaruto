@@ -321,6 +321,7 @@ public class NanoHTTPD {
                 decodeHeader(hin, pre, parms, header);
                 String method = pre.getProperty("method");
                 String uri = pre.getProperty("uri");
+                String version = pre.getProperty("version");
 
                 long size = 0x7FFFFFFFFFFFFFFFl;
                 String contentLength = header.getProperty("content-length");
@@ -432,7 +433,7 @@ public class NanoHTTPD {
                     files.put("content", saveTmpFile(fbuf, 0, f.size()));
                 
                 // Build request
-                Request req = new Request(method, uri, parms, header, files);
+                Request req = new Request(method, uri, version, parms, header, files);
 
                 // Ok, now do the serve()
                 Response res = serve(req);
@@ -498,6 +499,9 @@ public class NanoHTTPD {
                 // NOTE: this now forces header names lowercase since they are
                 // case insensitive and vary by client.
                 if (st.hasMoreTokens()) {
+                	String version = st.nextToken();
+                	pre.put("version", version);
+                	
                     String line = in.readLine();
                     while (line != null && line.trim().length() > 0) {
                         int p = line.indexOf(':');

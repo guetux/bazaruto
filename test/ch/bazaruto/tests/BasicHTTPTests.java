@@ -53,7 +53,7 @@ public class BasicHTTPTests {
     public void testPostArg() {
         Properties parms = new Properties();
         parms.put("number", 42);
-        Request req = new Request("POST", "/sc1/postarg", parms);
+        Request req = new Request("POST", "/sc1/postarg", "HTTP/1.1", parms);
         Response res = bazaruto.dispatch(req);
         assertEquals("SC1:postarg:42", res.toString());
     }
