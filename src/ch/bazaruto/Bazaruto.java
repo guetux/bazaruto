@@ -82,8 +82,6 @@ public class Bazaruto extends NanoHTTPD {
     public Response dispatch(Request req) {
     	Response response = null;
     	
-	return null;
-
         for (Entry<Pattern, Class> entry: controllers.entrySet()) {
             Pattern url_pattern = entry.getKey();
             Class controller = entry.getValue();
@@ -107,8 +105,7 @@ public class Bazaruto extends NanoHTTPD {
         // Nothing found on this url, send 404
 	    response = new Response("Page not found: Nothing registered to this uri",
 	                NanoHTTPD.HTTP_NOTFOUND);
-    	//return deliver(req, response);
-	
+    	return deliver(req, response);
     }
     
     public Response deliver(Request req, Response response) {
