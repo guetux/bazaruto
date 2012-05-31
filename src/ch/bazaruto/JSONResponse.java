@@ -3,9 +3,11 @@ package ch.bazaruto;
 import java.io.InputStream;
 
 public class JSONResponse extends Response {
-	
-	public String mimeType = NanoHTTPD.MIME_JSON;
-	
+    
+    {
+        mimeType = NanoHTTPD.MIME_JSON;
+    }
+    
     public JSONResponse() {
         this.data = toInputStream("");
     }
