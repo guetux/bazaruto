@@ -122,7 +122,8 @@ public class NanoHTTPD {
             HTTP_FORBIDDEN = "403 Forbidden", HTTP_NOTFOUND = "404 Not Found",
             HTTP_BADREQUEST = "400 Bad Request",
             HTTP_INTERNALERROR = "500 Internal Server Error",
-            HTTP_NOTIMPLEMENTED = "501 Not Implemented";
+            HTTP_NOTIMPLEMENTED = "501 Not Implemented",
+    		HTTP_BADGATEWAY = "502 Bad Gateway";
 
     // Common mime types for response content
     public static final String 
