@@ -118,6 +118,7 @@ public class NanoHTTPD {
             HTTP_RANGE_NOT_SATISFIABLE = "416 Requested Range Not Satisfiable",
             HTTP_MOVED = "301 Moved Permanently",
             HTTP_REDIRECT = "302 Found",
+            HTTP_SEEOTHER = "303 See Other",
             HTTP_NOTMODIFIED = "304 Not Modified",
             HTTP_FORBIDDEN = "403 Forbidden", HTTP_NOTFOUND = "404 Not Found",
             HTTP_BADREQUEST = "400 Bad Request",
