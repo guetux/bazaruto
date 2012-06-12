@@ -733,30 +733,11 @@ public class NanoHTTPD {
                 if (sep >= 0) {
                     String varname = decodePercent(e.substring(0, sep)).trim();
                     String value = decodePercent(e.substring(sep + 1));
-                    putParam(p, varname, value);
+                    p.setProperty(varname, value);
                 }
             }
         }
 
-        /**
-         * Checks a parameter if it's a number or string and puts it into the paramlist
-         */
-        private void putParam(Properties parms, String varname, String value) {
-            try { 
-                Double double_value = Double.parseDouble(value);
-                parms.put(varname, double_value);
-            } catch (NumberFormatException nfe) {};
-            
-            try {
-                Integer int_value = Integer.parseInt(value);
-                parms.put(varname, int_value);
-            } catch (NumberFormatException nfe) {};
-            
-            if (!parms.containsKey(varname)) {
-                parms.put(varname, value);
-            }
-        }
-        
         /**
          * Returns an error message as a HTTP response and throws
          * InterruptedException to stop further request processing.
