@@ -439,6 +439,9 @@ public class NanoHTTPD {
                 
                 // Build request
                 Request req = new Request(method, uri, version, parms, header, files);
+                
+                // Save request body if we need it later
+                req.rawBody = fbuf;
 
                 // Ok, now do the serve()
                 Response res = serve(req);

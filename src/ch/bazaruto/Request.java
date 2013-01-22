@@ -41,6 +41,11 @@ public class Request {
     public Properties files = new Properties();
     
     /*
+     * The raw request body as it was sent over the wire
+     */
+    public byte[] rawBody;
+    
+    /*
      * Default basic constructor
      */
     public Request() {}
