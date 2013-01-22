@@ -1,5 +1,9 @@
 package ch.bazaruto;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 
 public class Request {
@@ -90,5 +94,20 @@ public class Request {
 
     public String getRequestLine() {
     	return method + " " + uri + " " + version;
+    }
+    
+    public String getRequestBody() {
+        try {
+            ByteArrayInputStream bin = new ByteArrayInputStream(rawBody);
+            BufferedReader in = new BufferedReader(new InputStreamReader(bin));
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                body.append(line);
+            }
+            return body.toString();
+        } catch (IOException e) {
+            return null;
+        }
     }
 }
