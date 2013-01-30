@@ -104,6 +104,7 @@ public class Request {
             String line;
             while ((line = in.readLine()) != null) {
                 body.append(line);
+                body.append("\n");
             }
             return body.toString();
         } catch (IOException e) {
