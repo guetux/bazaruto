@@ -167,13 +167,15 @@ public class NanoHTTPD {
             mimeTypes.put(st.nextToken(), st.nextToken());
     }
 
-    private static int bufferSize = 16 * 1024;
-    private int tcpPort = 9000;
-    private ServerSocket serverSocket;
+    // This is how we roll
+    public int tcpPort = 9000;
+    public ServerSocket serverSocket;
     public int maxConcurrentRequests = 4;
-    Thread dispatcherThread;
+    
+    // The little secret
+    private static int bufferSize = 16 * 1024;
+    private Thread dispatcherThread;
     private ExecutorService execSvc;
-
     
     /**
      * GMT date formatter
