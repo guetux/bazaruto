@@ -162,7 +162,8 @@ public class NanoHTTPD {
                 + "ogg        application/x-ogg "
                 + "zip        application/octet-stream "
                 + "exe        application/octet-stream "
-                + "class      application/octet-stream ");
+                + "class      application/octet-stream "
+                + "svg        image/svg+xml ");
         while (st.hasMoreTokens())
             mimeTypes.put(st.nextToken(), st.nextToken());
     }
